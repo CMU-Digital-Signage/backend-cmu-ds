@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DB_URL")
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  firstName String? @db.VarChar(255)
+  lastName  String? @db.VarChar(255)
+  email     String  @unique(map: "email") @db.VarChar(255)
+  isAdmin   Boolean @default(false)
+}
+
+model Device {
+  MACaddress  String  @id @db.VarChar(255)
+  IPaddress   String  @db.VarChar(255)
+  name        String  @unique(map: "name") @db.VarChar(255)
+  floor       Int
+  location    Bytes?  @db.Blob
+  description String? @db.VarChar(255)
+}
+
+model Emergency {
+  incidentName   String  @id @db.VarChar(255)
+  emergencyImage Bytes   @db.Blob
+  description    String? @db.VarChar(255)
+  status         Boolean @default(false)
+}

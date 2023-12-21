@@ -17,9 +17,8 @@ model User {
 }
 
 model Device {
-  MACaddress  String    @id @db.VarChar(255)
+  deviceName  String    @id @db.VarChar(255)
   IPaddress   String    @db.VarChar(255)
-  name        String    @unique(map: "name") @db.VarChar(255)
   floor       Int
   location    Bytes?    @db.Blob
   description String?   @db.VarChar(255)
@@ -29,31 +28,31 @@ model Device {
 
 model Poster {
   title       String      @unique(map: "title") @db.VarChar(255)
-  MACaddress  String      @db.VarChar(255)
+  deviceName  String      @db.VarChar(255)
   id          Int
   duration    Int
   recurrence  String?     @db.VarChar(255)
   description String?     @db.VarChar(255)
+  image       Bytes       @db.Blob
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  image       Bytes       @db.Blob
   Display     Display[]
   Pdatetime   Pdatetime[]
-  Device      Device      @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_1")
+  Device      Device      @relation(fields: [deviceName], references: [deviceName], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_1")
   User        User        @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_2")
 
-  @@id([title, MACaddress, id])
-  @@index([MACaddress], map: "MACaddress")
+  @@id([title, deviceName, id])
+  @@index([deviceName], map: "MACaddress")
   @@index([id], map: "id")
 }
 
 model Display {
-  MACaddress String @db.VarChar(255)
+  deviceName String @db.VarChar(255)
   title      String @db.VarChar(255)
-  Device     Device @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
+  Device     Device @relation(fields: [deviceName], references: [deviceName], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
   Poster     Poster @relation(fields: [title], references: [title], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
 
-  @@id([MACaddress, title])
+  @@id([deviceName, title])
   @@index([title], map: "title")
 }
 

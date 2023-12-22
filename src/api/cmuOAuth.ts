@@ -90,11 +90,7 @@ cmuOAuth.post("/cmuOAuth", async (req: Request, res: Response) => {
     //create session
     const token = jwt.sign(
       {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
         email: user.email,
-        isAdmin: user.isAdmin,
       },
       process.env.JWT_SECRET!,
       {
@@ -102,23 +98,7 @@ cmuOAuth.post("/cmuOAuth", async (req: Request, res: Response) => {
       }
     );
 
-    return res
-      .cookie("token", token, {
-        maxAge: 3600000 * 24 * 1, // Cookie will last for 1 day only
-        //Set httpOnly to true so that client JavaScript cannot read or modify token
-        //And the created token can be read by server side only
-        httpOnly: true,
-        sameSite: "lax",
-        //force cookie to use HTTPS only in production code
-        secure: process.env.NODE_ENV === "production",
-      })
-      .send({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        isAdmin: user.isAdmin,
-      });
+    return res.send({ user, token });
   } catch (err: any) {
     if (!err.response) {
       return res.send({

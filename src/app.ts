@@ -17,7 +17,7 @@ app.use(json());
 app.use(`${prefix}/`, routes);
 
 app.listen(5000,
-  // "192.168.1.63",    // for test call api from raspberry pi, ip of server (PC)
+  "192.168.1.63",    // for test call api from raspberry pi, ip of server (PC)
   () =>
   console.log(`Server running on port ${port}!`)
 );

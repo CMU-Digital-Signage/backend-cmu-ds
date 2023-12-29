@@ -12,7 +12,7 @@ type Device = {
   MACaddress: string;
   IPaddress: string;
   name: string;
-  floor: number;
+  room: number;
   location: Blob;
   description: string;
 };

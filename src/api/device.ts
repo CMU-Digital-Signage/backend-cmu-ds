@@ -144,13 +144,13 @@ device.put("/device",
       try {
           const device = await prisma.device.update({
             where: {
-              MACaddress: req.query.MACaddress
+              MACaddress: req.body.MACaddress
             },
             data: {
-              deviceName: req.query.deviceName,
-              room: parseInt(req.query.room),
-              location: req.query.location,
-              description: req.query.description,
+              deviceName: req.body.deviceName,
+              room: parseInt(req.body.room),
+              location: req.body.location,
+              description: req.body.description,
             }
           });
           return res.send({ ok: true, message: "Edit device successfully." });

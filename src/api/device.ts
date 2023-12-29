@@ -1,20 +1,11 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
-import { signatures } from "../utils/config";
 import { config } from "../utils/config";
-import { Prisma } from '@prisma/client'
+import { Prisma } from "@prisma/client";
 
 export const device = Router();
 
 var { expressjwt: jwt } = require("express-jwt");
-
-function detectMimeType(b64: string): string | undefined {
-  for (var s in signatures) {
-    if (b64.indexOf(s) === 0) {
-      return signatures[s as keyof typeof signatures];
-    }
-  }
-}
 
 /*
 device.get("/device", async (req: Request, res: Response) => {
@@ -38,12 +29,9 @@ device.get("/device", async (req: Request, res: Response) => {
       },
     });
     if (data?.location) {
-      // const image = Buffer.from(data.location, "base64");
-      const type = detectMimeType(data.location);
-      // return res.send(`<img src="data:${type};base64,${data.location}" />`);
       return res.send({
         ok: true,
-        image: `data:${type};base64,${data.location}`,
+        image: data.location,
       });
     }
     return res.status(404).send({ ok: false, message: "Image not found" });
@@ -56,7 +44,8 @@ device.get("/device", async (req: Request, res: Response) => {
 */
 
 // GET /device : return array of devices
-device.get("/device", 
+device.get(
+  "/device",
   jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
@@ -67,29 +56,35 @@ device.get("/device",
         .status(500)
         .send({ ok: false, message: "Internal Server Error" });
     }
-});
+  }
+);
 
 // POST /device : add device into database
-device.post("/device",
+device.post(
+  "/device",
   jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
       try {
-          const device = await prisma.device.create({
-            data: {
-              deviceName: req.query.deviceName,
-              MACaddress: req.query.MACaddress,
-              room: parseInt(req.query.room),
-              location: req.query.location,
-              description: req.query.description,
-            }
-          });
-          return res.send({ ok: true, message: "Add device successfully." });
+        const device = await prisma.device.create({
+          data: {
+            deviceName: req.query.deviceName,
+            MACaddress: req.query.MACaddress,
+            room: parseInt(req.query.room),
+            location: req.query.location,
+            description: req.query.description,
+          },
+        });
+        return res.send({ ok: true, message: "Add device successfully." });
       } catch (err) {
-        if(err instanceof Prisma.PrismaClientKnownRequestError){
-          if (err.code === 'P2002'){
-            return res.status(400)
-              .send({ ok: false, message: "Device Name or MAC Address are already used." });
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+          if (err.code === "P2002") {
+            return res
+              .status(400)
+              .send({
+                ok: false,
+                message: "Device Name or MAC Address are already used.",
+              });
           }
         }
       }
@@ -137,31 +132,40 @@ device.post("/device",
 */
 
 // PUT /device : edit device in database
-device.put("/device",
+device.put(
+  "/device",
   jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
       try {
-          const device = await prisma.device.update({
-            where: {
-              MACaddress: req.body.MACaddress
-            },
-            data: {
-              deviceName: req.body.deviceName,
-              room: parseInt(req.body.room),
-              location: req.body.location,
-              description: req.body.description,
-            }
-          });
-          return res.send({ ok: true, message: "Edit device successfully." });
+        const device = await prisma.device.update({
+          where: {
+            MACaddress: req.body.MACaddress,
+          },
+          data: {
+            deviceName: req.body.deviceName,
+            room: parseInt(req.body.room),
+            location: req.body.location,
+            description: req.body.description,
+          },
+        });
+        return res.send({ ok: true, message: "Edit device successfully." });
       } catch (err) {
-        if(err instanceof Prisma.PrismaClientKnownRequestError){
-          if (err.code === 'P2002'){
-            return res.status(400)
-              .send({ ok: false, message: "Device Name is already used in update device." });
-          }else if (err.code === 'P2025'){
-            return res.status(400)
-              .send({ ok: false, message: "MAC Address not found for edit device." });
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+          if (err.code === "P2002") {
+            return res
+              .status(400)
+              .send({
+                ok: false,
+                message: "Device Name is already used in update device.",
+              });
+          } else if (err.code === "P2025") {
+            return res
+              .status(400)
+              .send({
+                ok: false,
+                message: "MAC Address not found for edit device.",
+              });
           }
         }
       }
@@ -174,22 +178,27 @@ device.put("/device",
 );
 
 // DELETE /device : delete device from database
-device.delete("/device",
+device.delete(
+  "/device",
   jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
       try {
         const device = await prisma.device.delete({
           where: {
-            deviceName: req.query.deviceName,
-          }
+            MACaddress: req.query.MACaddress,
+          },
         });
         return res.send({ ok: true, message: "Delete device successfully." });
       } catch (err) {
-        if(err instanceof Prisma.PrismaClientKnownRequestError){
-          if (err.code === 'P2025'){
-            return res.status(400)
-              .send({ ok: false, message: "MAC Address not found for delete device." });
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+          if (err.code === "P2025") {
+            return res
+              .status(400)
+              .send({
+                ok: false,
+                message: "MAC Address not found for delete device.",
+              });
           }
         }
       }

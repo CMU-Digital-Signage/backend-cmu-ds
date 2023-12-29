@@ -17,9 +17,9 @@ model User {
 }
 
 model Device {
-  deviceName  String    @id @db.VarChar(255)
-  MACaddress  String    @unique(map: "MACaddress") @db.VarChar(255)
-  floor       Int
+  MACaddress  String    @id @db.VarChar(255)
+  deviceName  String?    @unique(map: "deviceName") @db.VarChar(255)
+  room        Int?
   location    String?   @db.LongText
   description String?   @db.VarChar(255)
   Display     Display[]
@@ -28,7 +28,7 @@ model Device {
 
 model Poster {
   title       String      @unique(map: "title") @db.VarChar(255)
-  deviceName  String      @db.VarChar(255)
+  MACaddress  String      @db.VarChar(255)
   id          Int
   duration    Int
   recurrence  String?     @db.VarChar(255)
@@ -38,21 +38,21 @@ model Poster {
   updatedAt   DateTime    @updatedAt
   Display     Display[]
   Pdatetime   Pdatetime[]
-  Device      Device      @relation(fields: [deviceName], references: [deviceName], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_1")
+  Device      Device      @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_1")
   User        User        @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_2")
 
-  @@id([title, deviceName, id])
-  @@index([deviceName], map: "MACaddress")
+  @@id([title, MACaddress, id])
+  @@index([MACaddress], map: "MACaddress")
   @@index([id], map: "id")
 }
 
 model Display {
-  deviceName String @db.VarChar(255)
+  MACaddress String @db.VarChar(255)
   title      String @db.VarChar(255)
-  Device     Device @relation(fields: [deviceName], references: [deviceName], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
+  Device     Device @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
   Poster     Poster @relation(fields: [title], references: [title], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
 
-  @@id([deviceName, title])
+  @@id([MACaddress, title])
   @@index([title], map: "title")
 }
 

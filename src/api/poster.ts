@@ -11,14 +11,9 @@ poster.get("/poster",
   jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
-      const poster = await prisma.poster.findMany({
-        where: {
-          title: {
-            contains: req.query.title 
-          }
-        }
-      });
-        return res.send({ ok: true, poster });
+      const regex = `.*${req.query.title}.*`;
+      const poster = await prisma.$queryRaw`SELECT * FROM Poster NATURAL JOIN Pdatetime WHERE title REGEXP ${regex}`;
+      return res.send({ ok: true, poster });
     } catch (err) {
       return res
         .status(500)

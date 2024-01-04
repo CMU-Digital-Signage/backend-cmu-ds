@@ -21,3 +21,17 @@ poster.get("/poster",
     }
   }
 );
+
+poster.get("/poster/device",
+  jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
+  async (req: any, res: any) => {
+    try {
+      const poster = await prisma.$queryRaw`SELECT * FROM Poster NATURAL JOIN Pdatetime WHERE MACaddress = ${req.query.mac}`;
+      return res.send({ ok: true, poster });
+    } catch (err) {
+      return res
+        .status(500)
+        .send({ ok: false, message: "Internal Server Error", err });
+    }
+  }
+);

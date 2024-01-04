@@ -98,7 +98,6 @@ device.get(
 
 device.post(
   "/device",
-  jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
       try {

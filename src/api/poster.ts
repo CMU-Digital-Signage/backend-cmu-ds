@@ -23,7 +23,6 @@ poster.get("/poster",
 );
 
 poster.get("/poster/device",
-  jwt({ secret: config.secret, algorithms: [config.jwtAlgo] }),
   async (req: any, res: any) => {
     try {
       const poster = await prisma.$queryRaw`SELECT * FROM Poster NATURAL JOIN Pdatetime WHERE MACaddress = ${req.query.mac}`;

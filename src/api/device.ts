@@ -225,7 +225,7 @@ device.post("/device/mac", async (req: any, res: any) => {
     try {
       const device = await prisma.device.create({
         data: {
-          MACaddress: req.query.MACaddress,
+          MACaddress: req.query.mac,
         },
       });
       return res.send({ ok: true, message: "Add device successfully." });

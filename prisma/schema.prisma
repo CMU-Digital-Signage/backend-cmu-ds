@@ -9,16 +9,17 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  firstName String?  @db.VarChar(255)
-  lastName  String?  @db.VarChar(255)
-  email     String   @unique(map: "email") @db.VarChar(255)
+  firstName String   @db.VarChar(255)
+  lastName  String   @db.VarChar(255)
   isAdmin   Boolean  @default(false)
   Poster    Poster[]
+
+  @@unique([firstName, lastName], map: "User_UN")
 }
 
 model Device {
   MACaddress  String    @id @db.VarChar(255)
-  deviceName  String?    @unique(map: "deviceName") @db.VarChar(255)
+  deviceName  String?   @unique(map: "deviceName") @db.VarChar(255)
   room        Int?
   location    String?   @db.LongText
   description String?   @db.VarChar(255)
@@ -28,8 +29,8 @@ model Device {
 
 model Poster {
   title       String      @unique(map: "title") @db.VarChar(255)
-  MACaddress  String      @db.VarChar(255)
   id          Int
+  MACaddress  String      @db.VarChar(255)
   duration    Int
   recurrence  String?     @db.VarChar(255)
   description String?     @db.VarChar(255)
@@ -47,8 +48,8 @@ model Poster {
 }
 
 model Display {
-  MACaddress String @db.VarChar(255)
   title      String @db.VarChar(255)
+  MACaddress String @db.VarChar(255)
   Device     Device @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
   Poster     Poster @relation(fields: [title], references: [title], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
 

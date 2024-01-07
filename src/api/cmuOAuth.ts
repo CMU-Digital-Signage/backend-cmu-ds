@@ -54,35 +54,27 @@ cmuOAuth.post("/cmuOAuth", async (req: Request, res: Response) => {
         .send({ ok: false, message: "Cannot get cmu basic info" });
     }
 
-    let user = await prisma.user.findUnique({
-      where: {
-        email: response2.cmuitaccount,
-      },
-    });
-
-    const firstName =
+    const firstName: string =
       response2.firstname_EN.charAt(0) +
       response2.firstname_EN.slice(1).toLowerCase();
-    const lastName =
+    const lastName: string =
       response2.lastname_EN.charAt(0) +
       response2.lastname_EN.slice(1).toLowerCase();
+
+    let user = await prisma.user.findUnique({
+      where: {
+        firstName_lastName: {
+          firstName: firstName,
+          lastName: lastName,
+        },
+      },
+    });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
           firstName: firstName,
           lastName: lastName,
-          email: response2.cmuitaccount,
-        },
-      });
-    } else if (!user.firstName) {
-      await prisma.user.update({
-        where: {
-          email: response2.cmuitaccount,
-        },
-        data: {
-          firstName,
-          lastName,
         },
       });
     }
@@ -90,7 +82,8 @@ cmuOAuth.post("/cmuOAuth", async (req: Request, res: Response) => {
     //create session
     const token = jwt.sign(
       {
-        email: user.email,
+        firstName: firstName,
+        lastName: lastName,
       },
       process.env.JWT_SECRET!,
       {

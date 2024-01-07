@@ -13,7 +13,10 @@ user.get(
     try {
       const user = await prisma.user.findUnique({
         where: {
-          email: req.auth.email,
+          firstName_lastName: {
+            firstName: req.auth.firstName,
+            lastName: req.auth.lastName,
+          },
         },
       });
 

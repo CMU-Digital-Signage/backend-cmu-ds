@@ -1,4 +1,6 @@
+const secret = process.env.JWT_SECRET;
+
 export const config = {
-  secret: process.env.JWT_SECRET,
+  secret: secret,
   jwtAlgo: "HS256",
 };

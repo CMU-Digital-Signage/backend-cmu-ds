@@ -1,16 +1,23 @@
 import express from "express";
-import { cmuOAuth } from "./cmuOAuth";
-import { user } from "./user";
-import { device } from "./device";
 import { admin } from "./admin";
-import { poster } from "./poster";
+import { cmuOAuth } from "./cmuOAuth";
 import { cpe } from "./cpe";
+import { device } from "./device";
+import { poster } from "./poster";
+import { user } from "./user";
+import { pi } from "./pi";
+import { jwtMiddleware, handleJWTError } from "../utils/authen";
 
 export const routes = express.Router();
 
-routes.use(cmuOAuth);
-routes.use(cpe)
-routes.use(user);
-routes.use(device);
-routes.use(admin);
-routes.use(poster);
+routes.use(jwtMiddleware.unless({ path: ["/pi"] }));
+
+routes.use("/cmuOAuth", cmuOAuth);
+routes.use("/pi", pi);
+routes.use("/cpe", cpe);
+routes.use("/user", user);
+routes.use("/admin", admin);
+routes.use("/device", device);
+routes.use("/poster", poster);
+
+routes.use(handleJWTError);

@@ -16,7 +16,7 @@ const getCMUBasicInfoAsync = async (accessToken: string) => {
   }
 };
 
-cmuOAuth.post("/cmuOAuth", async (req: Request, res: Response) => {
+cmuOAuth.post("/", async (req: Request, res: Response) => {
   try {
     //validate code
     if (typeof req.query.code !== "string") {

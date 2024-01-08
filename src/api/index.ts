@@ -10,7 +10,7 @@ import { jwtMiddleware, handleJWTError } from "../utils/authen";
 
 export const routes = express.Router();
 
-routes.use(jwtMiddleware.unless({ path: ["/pi"] }));
+routes.use(jwtMiddleware.unless({ path: ["/api/v1/pi"] }));
 
 routes.use("/cmuOAuth", cmuOAuth);
 routes.use("/pi", pi);

@@ -19,7 +19,7 @@ admin.post("/", async (req: any, res: any) => {
       });
       return res.send({ ok: true, admin });
     } catch (err) {
-      return res.status(404).send({
+      return res.status(400).send({
         ok: false,
         id: req.query.id,
         message: "Record to add admin role not found",
@@ -48,7 +48,7 @@ admin.delete("/", async (req: any, res: any) => {
     } catch (err) {
       console.log(err);
 
-      return res.status(404).send({
+      return res.status(400).send({
         ok: false,
         id: req.query.id,
         message: "Record to remove admin role not found",

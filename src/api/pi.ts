@@ -34,7 +34,7 @@ pi.post("/", async (req: any, res: any) => {
   }
 });
 
-pi.get("/", async (req: any, res: any) => {
+pi.get("/poster", async (req: any, res: any) => {
   try {
     const poster =
       await prisma.$queryRaw`SELECT * FROM Poster NATURAL JOIN Pdatetime WHERE MACaddress = ${req.query.mac}`;

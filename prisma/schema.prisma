@@ -32,7 +32,6 @@ model Poster {
   id          Int
   MACaddress  String      @db.VarChar(255)
   duration    Int
-  recurrence  String?     @db.VarChar(255)
   description String?     @db.VarChar(255)
   image       String      @db.LongText
   createdAt   DateTime    @default(now())

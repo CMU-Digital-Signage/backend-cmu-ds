@@ -10,14 +10,15 @@ dotenv.config();
 const port = process.env.PORT;
 const prefix = "/api/v1";
 
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://192.168.1.101:3000"],
+    credentials: true,
+  })
+);
 app.use(cookieParser());
-app.use(json({limit: '50mb'}));
+app.use(json({ limit: "50mb" }));
 
 app.use(`${prefix}/`, routes);
 
-app.listen(5000,
-  //"192.168.1.63",    // for test call api from raspberry pi, ip of server (PC)
-  () =>
-  console.log(`Server running on port ${port}!`)
-);
+app.listen(5000, () => console.log(`Server running on port ${port}!`));

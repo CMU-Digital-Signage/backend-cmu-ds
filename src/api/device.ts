@@ -81,7 +81,7 @@ device.post("/", async (req: any, res: any) => {
           },
           data: {
             deviceName: req.body.deviceName,
-            room: parseInt(req.body.room),
+            room: req.body.room,
             location: req.body.location,
             description: req.body.description,
           },
@@ -114,7 +114,7 @@ device.put("/", async (req: any, res: any) => {
         },
         data: {
           deviceName: req.body.deviceName,
-          room: parseInt(req.body.room),
+          room: req.body.room,
           location: req.body.location,
           description: req.body.description,
         },

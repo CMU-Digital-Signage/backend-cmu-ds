@@ -18,6 +18,76 @@ poster.get("/", async (req: any, res: any) => {
   }
 });
 
+// POST /poster : add poster with schedules
+poster.post("/", async (req: any, res: any) => {
+  try {/*
+    const poster = await prisma.poster.findMany({
+      where: {
+        title: {
+          contains: req.query.title
+        }
+      },
+      include: {
+        Pdatetime: {
+          select: {
+            startDate: true,
+            endDate: true,
+            startTime: true,
+            endTime: true,
+          }
+        }
+      }
+    })
+    return res.send({ ok: true, poster });*/
+    const posterName = await prisma.poster.findUnique({
+      where: {
+        title: req.body.title
+      }
+    });
+    if (posterName == null) {
+      const user = await prisma.user.findUnique({
+        where: {
+          firstName_lastName: {
+            firstName: req.auth.firstName,
+            lastName: req.auth.lastName,
+          },
+        },
+      });
+      const createPoster = await prisma.poster.create({
+        data: {
+          title: req.body.title,
+          duration: parseInt(req.body.duration),
+          description: req.body.description,
+          image: req.body.image,
+          User: {
+            connect: {
+              id: user?.id
+            }
+          },
+        },
+      });/*
+      const createDisplay = await prisma.display.createMany({
+        data: {
+
+        }
+      });*/
+      return res.send({ ok: true, createPoster });
+    } else {
+      return res
+        .status(400)
+        .send({
+          ok: false,
+          message: "title is duplicated!",
+        });
+    }
+    //return res.send({ ok: true, posterName });
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
 // GET /poster/emergency : get emergency poster
 poster.get("/emergency", async (req: any, res: any) => {
   try {

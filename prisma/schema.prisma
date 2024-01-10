@@ -27,42 +27,33 @@ model Device {
 }
 
 model Poster {
-  posterId    String      @unique(map: "posterId") @default(uuid()) @db.VarChar(255)
-  id          String      @db.VarChar(255)
-  title       String      @unique(map: "title") @db.VarChar(255)
-  duration    Int
-  description String?     @db.VarChar(255)
-  image       String      @db.LongText
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @default(now()) @updatedAt
+  posterId    String    @unique(map: "posterId") @default(uuid()) @db.VarChar(255)
+  id          String    @db.VarChar(255)
+  title       String    @unique(map: "title") @db.VarChar(255)
+  description String?   @db.VarChar(255)
+  image       String    @db.LongText
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
   Display     Display[]
-  Pdatetime   Pdatetime[]
-  User        User        @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_2")
+  User        User      @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_2")
 
   @@id([posterId, id])
   @@index([id], map: "id")
 }
 
 model Display {
-  MACaddress String @db.VarChar(255)
-  posterId   String @db.VarChar(255)
-  Device     Device @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
-  Poster     Poster @relation(fields: [posterId], references: [posterId], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
+  MACaddress String   @db.VarChar(255)
+  posterId   String   @db.VarChar(255)
+  startDate  DateTime @db.Date
+  endDate    DateTime @db.Date
+  startTime  DateTime @db.Time(0)
+  endTime    DateTime @db.Time(0)
+  duration   Int
+  Device     Device   @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
+  Poster     Poster   @relation(fields: [posterId], references: [posterId], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
 
-  @@id([MACaddress, posterId])
+  @@id([MACaddress, posterId, startDate, endDate, startTime, endTime])
   @@index([MACaddress], map: "MACaddress")
-  @@index([posterId], map: "posterId")
-}
-
-model Pdatetime {
-  posterId  String   @db.VarChar(255)
-  startDate DateTime @db.Date
-  endDate   DateTime @db.Date
-  startTime DateTime @db.Time(0)
-  endTime   DateTime @db.Time(0)
-  Poster    Poster   @relation(fields: [posterId], references: [posterId], onDelete: NoAction, onUpdate: NoAction, map: "Pdatetime_ibfk_1")
-
-  @@id([posterId, startDate, endDate, startTime, endTime])
   @@index([posterId], map: "posterId")
 }
 

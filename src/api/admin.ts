@@ -23,6 +23,7 @@ admin.post("/", async (req: any, res: any) => {
           data: {
             firstName,
             lastName,
+            isAdmin: true
           },
         });
       }

@@ -4,12 +4,26 @@ import { Prisma } from "@prisma/client";
 
 export const poster = Router();
 
+type Schedule = {
+  startDate: string
+  endDate: string
+  time: [
+    {
+      startTime: string
+      endTime: string
+    }
+  ]
+  duration: number
+  MACaddress: string[]
+};
+
 // GET /poster : return array of posters
 poster.get("/", async (req: any, res: any) => {
   try {
     const regex = `.*${req.query.title}.*`;
     const poster =
-      await prisma.$queryRaw`SELECT * FROM Poster NATURAL JOIN Pdatetime WHERE title REGEXP ${regex}`;
+      await prisma.$queryRaw`SELECT posterId, id, title, MACaddress, startDate, endDate, startTime, endTime, duration 
+                              FROM Poster NATURAL JOIN Display WHERE title REGEXP ${regex}`;
     return res.send({ ok: true, poster });
   } catch (err) {
     return res
@@ -20,28 +34,10 @@ poster.get("/", async (req: any, res: any) => {
 
 // POST /poster : add poster with schedules
 poster.post("/", async (req: any, res: any) => {
-  try {/*
-    const poster = await prisma.poster.findMany({
-      where: {
-        title: {
-          contains: req.query.title
-        }
-      },
-      include: {
-        Pdatetime: {
-          select: {
-            startDate: true,
-            endDate: true,
-            startTime: true,
-            endTime: true,
-          }
-        }
-      }
-    })
-    return res.send({ ok: true, poster });*/
+  try {
     const posterName = await prisma.poster.findUnique({
       where: {
-        title: req.body.title
+        title: req.body.poster.title
       }
     });
     if (posterName == null) {
@@ -55,20 +51,34 @@ poster.post("/", async (req: any, res: any) => {
       });
       const createPoster = await prisma.poster.create({
         data: {
-          title: req.body.title,
-          description: req.body.description,
-          image: req.body.image,
+          title: req.body.poster.title,
+          description: req.body.poster.description,
+          image: req.body.poster.image,
           User: {
             connect: {
               id: user?.id
             }
           },
         },
-      });/*
-      const schedule = req.body.schedule;
-      schedule.array.forEach(e => {
-        e
-      });*/
+      });
+      const schedules : Schedule[] = req.body.display;
+      schedules.forEach(schedule => {
+        schedule.time.forEach(time => {
+          schedule.MACaddress.forEach(async (mac) => {
+            const createDisplay = await prisma.display.createMany({
+              data: {
+                MACaddress: mac,
+                posterId: createPoster?.posterId,
+                startDate: new Date(schedule.startDate),
+                endDate: new Date(schedule.endDate),
+                startTime: new Date(time.startTime),
+                endTime: new Date(time.endTime),
+                duration: schedule.duration,
+              }
+            });
+          });
+        });
+      });
       return res.send({ ok: true, createPoster });
     } else {
       return res
@@ -78,13 +88,41 @@ poster.post("/", async (req: any, res: any) => {
           message: "title is duplicated!",
         });
     }
-    //return res.send({ ok: true, posterName });
   } catch (err) {
     return res
       .status(500)
       .send({ ok: false, message: "Internal Server Error", err });
   }
 });
+
+// DELETE /poster : delete poster
+poster.delete("/", async (req: any, res: any) => {
+  try {
+    try {
+      const deletedDisplay = await prisma.display.deleteMany({
+        where: { 
+          posterId: req.query.posterId
+        }
+      });
+      const deletePoster = await prisma.poster.delete({
+        where: {
+          posterId: req.query.posterId
+        },
+      });
+      return res.send({ ok: true, deletePoster });
+    } catch (err) {
+      return res.status(400).send({
+        ok: false,
+        message: "Record to remove poster not found", err
+      });
+    }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error" });
+  }
+});
+
 
 // GET /poster/emergency : get emergency poster
 poster.get("/emergency", async (req: any, res: any) => {

@@ -9,7 +9,7 @@ admin.post("/", async (req: any, res: any) => {
     try {
       const { id, firstName, lastName } = req.query;
       const filter = id
-        ? { id: parseInt(id) }
+        ? { id: id }
         : { firstName_lastName: { firstName, lastName } };
       const admin = await prisma.user.update({
         where: filter,
@@ -38,7 +38,7 @@ admin.delete("/", async (req: any, res: any) => {
     try {
       const user = await prisma.user.update({
         where: {
-          id: parseInt(req.query.id),
+          id: req.query.id,
         },
         data: {
           isAdmin: false,

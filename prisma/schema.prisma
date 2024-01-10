@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   firstName String   @db.VarChar(255)
   lastName  String   @db.VarChar(255)
   isAdmin   Boolean  @default(false)
@@ -24,13 +24,12 @@ model Device {
   location    String?   @db.LongText
   description String?   @db.VarChar(255)
   Display     Display[]
-  Poster      Poster[]
 }
 
 model Poster {
+  posterId    String      @unique(map: "posterId") @default(uuid()) @db.VarChar(255)
+  id          String
   title       String      @unique(map: "title") @db.VarChar(255)
-  id          Int
-  MACaddress  String      @db.VarChar(255)
   duration    Int
   description String?     @db.VarChar(255)
   image       String      @db.LongText
@@ -38,33 +37,33 @@ model Poster {
   updatedAt   DateTime    @updatedAt
   Display     Display[]
   Pdatetime   Pdatetime[]
-  Device      Device      @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_1")
   User        User        @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_2")
 
-  @@id([title, MACaddress, id])
-  @@index([MACaddress], map: "MACaddress")
+  @@id([posterId, id])
   @@index([id], map: "id")
 }
 
 model Display {
-  title      String @db.VarChar(255)
   MACaddress String @db.VarChar(255)
+  posterId   String @db.VarChar(255)
   Device     Device @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
-  Poster     Poster @relation(fields: [title], references: [title], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
+  Poster     Poster @relation(fields: [posterId], references: [posterId], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
 
-  @@id([MACaddress, title])
-  @@index([title], map: "title")
+  @@id([MACaddress, posterId])
+  @@index([MACaddress], map: "MACaddress")
+  @@index([posterId], map: "posterId")
 }
 
 model Pdatetime {
-  title     String   @db.VarChar(255)
+  posterId  String   @db.VarChar(255)
   startDate DateTime @db.Date
   endDate   DateTime @db.Date
   startTime DateTime @db.Time(0)
   endTime   DateTime @db.Time(0)
-  Poster    Poster   @relation(fields: [title], references: [title], onDelete: NoAction, onUpdate: NoAction, map: "Pdatetime_ibfk_1")
+  Poster    Poster   @relation(fields: [posterId], references: [posterId], onDelete: NoAction, onUpdate: NoAction, map: "Pdatetime_ibfk_1")
 
-  @@id([title, startDate, endDate, startTime, endTime])
+  @@id([posterId, startDate, endDate, startTime, endTime])
+  @@index([posterId], map: "posterId")
 }
 
 model Emergency {

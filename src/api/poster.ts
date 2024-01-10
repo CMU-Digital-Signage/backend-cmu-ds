@@ -21,11 +21,7 @@ poster.get("/", async (req: any, res: any) => {
 // GET /poster/emergency : get emergency poster
 poster.get("/emergency", async (req: any, res: any) => {
   try {
-    const emergency = await prisma.emergency.findUnique({
-      where: {
-        incidentName: req.query.incidentName,
-      },
-    });
+    const emergency = await prisma.emergency.findMany();
     return res.send({ ok: true, emergency });
   } catch (err) {
     return res
@@ -39,13 +35,13 @@ poster.post("/emergency", async (req: any, res: any) => {
   try {
     const emer = await prisma.emergency.findUnique({
       select: {
-        incidentName: true
+        incidentName: true,
       },
       where: {
         incidentName: req.query.incidentName,
       },
     });
-    if(emer == null){
+    if (emer == null) {
       const emergency = await prisma.emergency.create({
         data: {
           incidentName: req.query.incidentName,
@@ -54,10 +50,13 @@ poster.post("/emergency", async (req: any, res: any) => {
         },
       });
       return res.send({ ok: true, emergency });
-    }else{
+    } else {
       return res
-      .status(400)
-      .send({ ok: false, message: `incidentName = "${emer.incidentName}" is duplicated!` });
+        .status(400)
+        .send({
+          ok: false,
+          message: `incidentName = "${emer.incidentName}" is duplicated!`,
+        });
     }
   } catch (err) {
     return res
@@ -69,7 +68,7 @@ poster.post("/emergency", async (req: any, res: any) => {
 // PUT /poster/emergency : edit emergency poster
 poster.put("/emergency", async (req: any, res: any) => {
   try {
-    try{
+    try {
       const emergency = await prisma.emergency.update({
         where: {
           incidentName: req.query.incidentName,
@@ -80,7 +79,7 @@ poster.put("/emergency", async (req: any, res: any) => {
         },
       });
       return res.send({ ok: true, emergency });
-    } catch (err){
+    } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === "P2002") {
           return res.status(400).send({

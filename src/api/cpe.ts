@@ -9,15 +9,36 @@ cpe.get("/instructor", async (req: Request, res: Response) => {
     const response = await axios.get(`${process.env.URL_PATH_CPE}/teacher`, {
       headers: { Authorization: `Bearer ${process.env.TOKEN_API_CPE}` },
     });
-    let instructors = <any>[];
+
+    let instructors: { firstName: string; lastName: string }[] = [];
     response.data.teachers.map((e: any) => {
       instructors.push({ firstName: e.firstNameEN, lastName: e.lastNameEN });
     });
 
-    const ins = await prisma.user.createMany({
-      data: instructors,
+    instructors.map(async (instructor) => {
+      const existingUser = await prisma.user.findUnique({
+        where: {
+          firstName_lastName: {
+            firstName: instructor.firstName,
+            lastName: instructor.lastName,
+          },
+        },
+      });
+
+      if (!existingUser) {
+        return prisma.user.create({
+          data: {
+            firstName: instructor.firstName,
+            lastName: instructor.lastName,
+          },
+        });
+      }
+      return;
     });
-    return res.send({ ok: true, instructors });
+
+    const user = await prisma.user.findMany();
+
+    return res.send({ ok: true, user });
   } catch (err) {
     return res
       .status(500)

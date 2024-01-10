@@ -18,6 +18,74 @@ poster.get("/", async (req: any, res: any) => {
   }
 });
 
+// POST /poster : add poster with schedules
+poster.post("/", async (req: any, res: any) => {
+  try {/*
+    const poster = await prisma.poster.findMany({
+      where: {
+        title: {
+          contains: req.query.title
+        }
+      },
+      include: {
+        Pdatetime: {
+          select: {
+            startDate: true,
+            endDate: true,
+            startTime: true,
+            endTime: true,
+          }
+        }
+      }
+    })
+    return res.send({ ok: true, poster });*/
+    const posterName = await prisma.poster.findUnique({
+      where: {
+        title: req.body.title
+      }
+    });
+    if (posterName == null) {
+      const user = await prisma.user.findUnique({
+        where: {
+          firstName_lastName: {
+            firstName: req.auth.firstName,
+            lastName: req.auth.lastName,
+          },
+        },
+      });
+      const createPoster = await prisma.poster.create({
+        data: {
+          title: req.body.title,
+          description: req.body.description,
+          image: req.body.image,
+          User: {
+            connect: {
+              id: user?.id
+            }
+          },
+        },
+      });/*
+      const schedule = req.body.schedule;
+      schedule.array.forEach(e => {
+        e
+      });*/
+      return res.send({ ok: true, createPoster });
+    } else {
+      return res
+        .status(400)
+        .send({
+          ok: false,
+          message: "title is duplicated!",
+        });
+    }
+    //return res.send({ ok: true, posterName });
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
 // GET /poster/emergency : get emergency poster
 poster.get("/emergency", async (req: any, res: any) => {
   try {
@@ -38,15 +106,15 @@ poster.post("/emergency", async (req: any, res: any) => {
         incidentName: true,
       },
       where: {
-        incidentName: req.query.incidentName,
+        incidentName: req.body.incidentName,
       },
     });
     if (emer == null) {
       const emergency = await prisma.emergency.create({
         data: {
-          incidentName: req.query.incidentName,
-          emergencyImage: req.query.emergencyImage,
-          description: req.query.description,
+          incidentName: req.body.incidentName,
+          emergencyImage: req.body.emergencyImage,
+          description: req.body.description,
         },
       });
       return res.send({ ok: true, emergency });

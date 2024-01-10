@@ -56,7 +56,6 @@ poster.post("/", async (req: any, res: any) => {
       const createPoster = await prisma.poster.create({
         data: {
           title: req.body.title,
-          duration: parseInt(req.body.duration),
           description: req.body.description,
           image: req.body.image,
           User: {
@@ -66,10 +65,9 @@ poster.post("/", async (req: any, res: any) => {
           },
         },
       });/*
-      const createDisplay = await prisma.display.createMany({
-        data: {
-
-        }
+      const schedule = req.body.schedule;
+      schedule.array.forEach(e => {
+        e
       });*/
       return res.send({ ok: true, createPoster });
     } else {
@@ -108,15 +106,15 @@ poster.post("/emergency", async (req: any, res: any) => {
         incidentName: true,
       },
       where: {
-        incidentName: req.query.incidentName,
+        incidentName: req.body.incidentName,
       },
     });
     if (emer == null) {
       const emergency = await prisma.emergency.create({
         data: {
-          incidentName: req.query.incidentName,
-          emergencyImage: req.query.emergencyImage,
-          description: req.query.description,
+          incidentName: req.body.incidentName,
+          emergencyImage: req.body.emergencyImage,
+          description: req.body.description,
         },
       });
       return res.send({ ok: true, emergency });

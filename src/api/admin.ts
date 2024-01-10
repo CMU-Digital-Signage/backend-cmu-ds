@@ -8,15 +8,25 @@ admin.post("/", async (req: any, res: any) => {
   try {
     try {
       const { id, firstName, lastName } = req.query;
-      const filter = id
-        ? { id: id }
-        : { firstName_lastName: { firstName, lastName } };
-      const admin = await prisma.user.update({
-        where: filter,
-        data: {
-          isAdmin: true,
-        },
-      });
+      let admin;
+      if (id) {
+        admin = await prisma.user.update({
+          where: {
+            id: id,
+          },
+          data: {
+            isAdmin: true,
+          },
+        });
+      } else {
+        admin = await prisma.user.create({
+          data: {
+            firstName,
+            lastName,
+          },
+        });
+      }
+
       return res.send({ ok: true, admin });
     } catch (err) {
       return res.status(400).send({

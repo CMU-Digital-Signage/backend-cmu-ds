@@ -10,7 +10,13 @@ import { jwtMiddleware, handleJWTError } from "../utils/authen";
 
 export const routes = express.Router();
 
-routes.use(jwtMiddleware.unless({ path: ["/api/v1/pi", "/api/v1/cmuOAuth"] }));
+const pathToRegexp = require("path-to-regexp");
+const unprotected = [
+  pathToRegexp("/api/v1/pi*"),
+  pathToRegexp("/api/v1/cmuOAuth"),
+];
+
+routes.use(jwtMiddleware.unless({ path: unprotected }));
 
 routes.use("/cmuOAuth", cmuOAuth);
 routes.use("/pi", pi);

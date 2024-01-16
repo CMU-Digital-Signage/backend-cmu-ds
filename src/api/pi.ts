@@ -36,8 +36,15 @@ pi.post("/", async (req: any, res: any) => {
 
 pi.get("/poster", async (req: any, res: any) => {
   try {
-    const poster =
-      await prisma.$queryRaw`SELECT image, startDate, endDate, startTime, endTime, duration FROM Display NATURAL JOIN Poster WHERE MACaddress = ${req.query.mac}`;
+    const date = new Date(new Date().setUTCHours(0, 0, 0, 0));
+
+    const poster = await prisma.$queryRaw`
+      SELECT image, startDate, endDate, startTime, endTime, duration
+      FROM Display NATURAL JOIN Poster
+      WHERE MACaddress = ${req.query.mac}
+      AND startDate <= ${date} AND endDate >= ${date}
+      `;
+
     return res.send({ ok: true, poster });
   } catch (err) {
     return res

@@ -95,6 +95,43 @@ poster.post("/", async (req: any, res: any) => {
   }
 });
 
+// PUT /poster : edit poster and schedule
+poster.put("/", async (req: any, res: any) => {
+  try {
+    try {
+      const editPoster = await prisma.poster.update({
+        where: {
+          posterId: req.query.posterId
+        },
+        data: {
+          title: req.body.poster.title,
+          description: req.body.poster.description,
+          image: req.body.poster.image,
+        }
+      });
+      return res.send({ ok: true, editPoster });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2002") {
+          return res.status(400).send({
+            ok: false,
+            message: "new poster name is already used.",
+          });
+        } else if (err.code === "P2025") {
+          return res.status(400).send({
+            ok: false,
+            message: "Record to edit poster not found.",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error" });
+  }
+});
+
 // DELETE /poster : delete poster
 poster.delete("/", async (req: any, res: any) => {
   try {

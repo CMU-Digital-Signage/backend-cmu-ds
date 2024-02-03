@@ -70,7 +70,11 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       },
     });
 
-    if (!user) {
+    if (!user && response2.cmuitAccountType !== "MISEmpAcc") {
+      return res
+        .status(401)
+        .send({ ok: false, message: "You don't have permission." });
+    } else if (!user) {
       user = await prisma.user.create({
         data: {
           firstName: firstName,

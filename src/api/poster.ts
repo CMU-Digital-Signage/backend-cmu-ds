@@ -22,7 +22,7 @@ poster.get("/", async (req: any, res: any) => {
   try {
     const regex = `.*${req.query.title}.*`;
     const poster =
-      await prisma.$queryRaw`SELECT posterId, id, title, MACaddress, startDate, endDate, startTime, endTime, duration 
+      await prisma.$queryRaw`SELECT posterId, id, title, description, MACaddress, startDate, endDate, startTime, endTime, duration, createdAt
                               FROM Poster NATURAL JOIN Display WHERE title REGEXP ${regex}`;
     return res.send({ ok: true, poster });
   } catch (err) {
@@ -92,6 +92,43 @@ poster.post("/", async (req: any, res: any) => {
     return res
       .status(500)
       .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
+// PUT /poster : edit poster and schedule
+poster.put("/", async (req: any, res: any) => {
+  try {
+    try {
+      const editPoster = await prisma.poster.update({
+        where: {
+          posterId: req.query.posterId
+        },
+        data: {
+          title: req.body.poster.title,
+          description: req.body.poster.description,
+          image: req.body.poster.image,
+        }
+      });
+      return res.send({ ok: true, editPoster });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2002") {
+          return res.status(400).send({
+            ok: false,
+            message: "new poster name is already used.",
+          });
+        } else if (err.code === "P2025") {
+          return res.status(400).send({
+            ok: false,
+            message: "Record to edit poster not found.",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error" });
   }
 });
 

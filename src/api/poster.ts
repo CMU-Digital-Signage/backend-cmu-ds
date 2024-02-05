@@ -22,7 +22,7 @@ poster.get("/", async (req: any, res: any) => {
   try {
     const regex = `.*${req.query.title}.*`;
     const poster =
-      await prisma.$queryRaw`SELECT posterId, id, title, description, MACaddress, startDate, endDate, startTime, endTime, duration, createdAt
+      await prisma.$queryRaw`SELECT posterId, id, title, image, description, MACaddress, startDate, endDate, startTime, endTime, duration, createdAt
                               FROM Poster NATURAL JOIN Display WHERE title REGEXP ${regex}`;
     return res.send({ ok: true, poster });
   } catch (err) {

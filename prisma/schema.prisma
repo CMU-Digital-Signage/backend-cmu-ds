@@ -23,6 +23,7 @@ model Device {
   room        String?   @db.VarChar(255)
   location    String?   @db.LongText
   description String?   @db.VarChar(255)
+  status      Boolean   @default(false)
   Display     Display[]
 }
 

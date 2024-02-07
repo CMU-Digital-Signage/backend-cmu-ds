@@ -6,12 +6,7 @@ export const user = Router();
 user.get("/", async (req: any, res: any) => {
   try {
     const user = await prisma.user.findUnique({
-      where: {
-        firstName_lastName: {
-          firstName: req.auth.firstName,
-          lastName: req.auth.lastName,
-        },
-      },
+      where: { email: req.auth.email },
     });
     return res.send({ ok: true, user });
   } catch (err) {

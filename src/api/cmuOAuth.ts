@@ -54,6 +54,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         .send({ ok: false, message: "Cannot get cmu basic info" });
     }
 
+    const email: string = response2.cmuitaccount;
     const firstName: string =
       response2.firstname_EN.charAt(0) +
       response2.firstname_EN.slice(1).toLowerCase();
@@ -63,18 +64,16 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
 
     let user = await prisma.user.findUnique({
       where: {
-        firstName_lastName: {
-          firstName: firstName,
-          lastName: lastName,
-        },
+        email,
       },
     });
 
     if (!user && response2.cmuitAccountType === "MISEmpAcc") {
       user = await prisma.user.create({
         data: {
-          firstName: firstName,
-          lastName: lastName,
+          firstName,
+          lastName,
+          email,
         },
       });
     } else if (!user) {
@@ -86,12 +85,13 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     //create session
     const token = jwt.sign(
       {
-        firstName: firstName,
-        lastName: lastName,
+        firstName,
+        lastName,
+        email,
       },
       process.env.JWT_SECRET!,
       {
-        expiresIn: "1d", // Token will last for 1 day only
+        expiresIn: "7d", // Token will last for 7 day only
       }
     );
 

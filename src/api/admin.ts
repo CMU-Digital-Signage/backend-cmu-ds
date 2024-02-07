@@ -7,7 +7,7 @@ export const admin = Router();
 admin.post("/", async (req: any, res: any) => {
   try {
     try {
-      const { id, firstName, lastName } = req.query;
+      const { id, email } = req.query;
       let admin;
       if (id) {
         admin = await prisma.user.update({
@@ -21,9 +21,8 @@ admin.post("/", async (req: any, res: any) => {
       } else {
         admin = await prisma.user.create({
           data: {
-            firstName,
-            lastName,
-            isAdmin: true
+            email,
+            isAdmin: true,
           },
         });
       }

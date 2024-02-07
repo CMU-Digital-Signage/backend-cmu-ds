@@ -25,14 +25,14 @@ cpe.get("/instructor", async (req: Request, res: Response) => {
         },
       });
 
-      if (!existingUser) {
-        return prisma.user.create({
-          data: {
-            firstName: instructor.firstName,
-            lastName: instructor.lastName,
-          },
-        });
-      }
+      // if (!existingUser) {
+      //   return prisma.user.create({
+      //     data: {
+      //       firstName: instructor.firstName,
+      //       lastName: instructor.lastName,
+      //     },
+      //   });
+      // }
       return;
     });
 

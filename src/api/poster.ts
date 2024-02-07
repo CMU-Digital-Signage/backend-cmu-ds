@@ -5,16 +5,16 @@ import { Prisma } from "@prisma/client";
 export const poster = Router();
 
 type Schedule = {
-  startDate: string
-  endDate: string
+  startDate: string;
+  endDate: string;
   time: [
     {
-      startTime: string
-      endTime: string
+      startTime: string;
+      endTime: string;
     }
-  ]
-  duration: number
-  MACaddress: string[]
+  ];
+  duration: number;
+  MACaddress: string[];
 };
 
 // GET /poster : return array of posters
@@ -37,17 +37,12 @@ poster.post("/", async (req: any, res: any) => {
   try {
     const posterName = await prisma.poster.findUnique({
       where: {
-        title: req.body.poster.title
-      }
+        title: req.body.poster.title,
+      },
     });
     if (posterName == null) {
       const user = await prisma.user.findUnique({
-        where: {
-          firstName_lastName: {
-            firstName: req.auth.firstName,
-            lastName: req.auth.lastName,
-          },
-        },
+        where: { email: req.auth.email },
       });
       const createPoster = await prisma.poster.create({
         data: {
@@ -56,14 +51,14 @@ poster.post("/", async (req: any, res: any) => {
           image: req.body.poster.image,
           User: {
             connect: {
-              id: user?.id
-            }
+              id: user?.id,
+            },
           },
         },
       });
-      const schedules : Schedule[] = req.body.display;
-      schedules.forEach(schedule => {
-        schedule.time.forEach(time => {
+      const schedules: Schedule[] = req.body.display;
+      schedules.forEach((schedule) => {
+        schedule.time.forEach((time) => {
           schedule.MACaddress.forEach(async (mac) => {
             const createDisplay = await prisma.display.createMany({
               data: {
@@ -74,19 +69,17 @@ poster.post("/", async (req: any, res: any) => {
                 startTime: new Date(time.startTime),
                 endTime: new Date(time.endTime),
                 duration: schedule.duration,
-              }
+              },
             });
           });
         });
       });
       return res.send({ ok: true, createPoster });
     } else {
-      return res
-        .status(400)
-        .send({
-          ok: false,
-          message: "title is duplicated!",
-        });
+      return res.status(400).send({
+        ok: false,
+        message: "title is duplicated!",
+      });
     }
   } catch (err) {
     return res
@@ -101,13 +94,13 @@ poster.put("/", async (req: any, res: any) => {
     try {
       const editPoster = await prisma.poster.update({
         where: {
-          posterId: req.query.posterId
+          posterId: req.query.posterId,
         },
         data: {
           title: req.body.poster.title,
           description: req.body.poster.description,
           image: req.body.poster.image,
-        }
+        },
       });
       return res.send({ ok: true, editPoster });
     } catch (err) {
@@ -137,20 +130,21 @@ poster.delete("/", async (req: any, res: any) => {
   try {
     try {
       const deletedDisplay = await prisma.display.deleteMany({
-        where: { 
-          posterId: req.query.posterId
-        }
+        where: {
+          posterId: req.query.posterId,
+        },
       });
       const deletePoster = await prisma.poster.delete({
         where: {
-          posterId: req.query.posterId
+          posterId: req.query.posterId,
         },
       });
       return res.send({ ok: true, deletePoster });
     } catch (err) {
       return res.status(400).send({
         ok: false,
-        message: "Record to remove poster not found", err
+        message: "Record to remove poster not found",
+        err,
       });
     }
   } catch (err) {
@@ -159,7 +153,6 @@ poster.delete("/", async (req: any, res: any) => {
       .send({ ok: false, message: "Internal Server Error" });
   }
 });
-
 
 // GET /poster/emergency : get emergency poster
 poster.get("/emergency", async (req: any, res: any) => {
@@ -194,12 +187,10 @@ poster.post("/emergency", async (req: any, res: any) => {
       });
       return res.send({ ok: true, emergency });
     } else {
-      return res
-        .status(400)
-        .send({
-          ok: false,
-          message: `incidentName = "${emer.incidentName}" is duplicated!`,
-        });
+      return res.status(400).send({
+        ok: false,
+        message: `incidentName = "${emer.incidentName}" is duplicated!`,
+      });
     }
   } catch (err) {
     return res

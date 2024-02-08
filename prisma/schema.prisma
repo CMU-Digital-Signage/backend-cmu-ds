@@ -12,7 +12,6 @@ model User {
   firstName String?  @db.VarChar(255)
   lastName  String?  @db.VarChar(255)
   email     String   @unique(map: "User_UNIQUE") @db.VarChar(255)
-  role      String?  @db.VarChar(255)
   isAdmin   Boolean  @default(false)
   Poster    Poster[]
 

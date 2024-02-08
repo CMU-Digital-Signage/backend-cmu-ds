@@ -25,30 +25,34 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         .send({ ok: false, message: "Invalid authorization code" });
     }
     //get access token
-    const response = await axios.post(
-      process.env.CMU_OAUTH_GET_TOKEN_URL!,
-      {},
-      {
-        params: {
-          code: req.query.code,
-          redirect_uri: process.env.CMU_OAUTH_REDIRECT_URL,
-          client_id: process.env.CMU_OAUTH_CLIENT_ID,
-          client_secret: process.env.CMU_OAUTH_CLIENT_SECRET,
-          grant_type: "authorization_code",
-        },
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-    if (!response) {
+    let response;
+    try {
+      response = await axios.post(
+        process.env.CMU_OAUTH_GET_TOKEN_URL!,
+        {},
+        {
+          params: {
+            code: req.query.code,
+            redirect_uri: process.env.CMU_OAUTH_REDIRECT_URL,
+            client_id: process.env.CMU_OAUTH_CLIENT_ID,
+            client_secret: process.env.CMU_OAUTH_CLIENT_SECRET,
+            grant_type: "authorization_code",
+          },
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+    } catch (err) {
       return res
         .status(400)
         .send({ ok: false, message: "Cannot get OAuth access token" });
     }
     //get basic info
-    const response2 = await getCMUBasicInfoAsync(response.data.access_token);
-    if (!response2) {
+    let response2;
+    try {
+      response2 = await getCMUBasicInfoAsync(response.data.access_token);
+    } catch (err) {
       return res
         .status(400)
         .send({ ok: false, message: "Cannot get cmu basic info" });
@@ -68,7 +72,8 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       },
     });
 
-    if (
+    if (user?.isAdmin) {
+    } else if (
       !user &&
       response2.cmuitAccountType === "MISEmpAcc" &&
       response2.organization_name_EN === "Faculty of Engineering"
@@ -80,7 +85,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
           email,
         },
       });
-    } else if (!user) {
+    } else if (!user || !user.isAdmin) {
       return res.status(401).send({ ok: false, message: "Permission Denied." });
     } else if (user.firstName === null) {
       user = await prisma.user.update({
@@ -114,7 +119,6 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         ok: false,
         message: "Cannot connect to API Server. Please try again later.",
       });
-    } else if (!err.response.data.ok) return err.response.data;
-    else return err;
+    } else return err;
   }
 });

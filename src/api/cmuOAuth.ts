@@ -73,6 +73,17 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     });
 
     if (user?.isAdmin) {
+      if (!user.firstName) {
+        user = await prisma.user.update({
+          where: {
+            email,
+          },
+          data: {
+            firstName,
+            lastName,
+          },
+        });
+      }
     } else if (
       !user &&
       response2.cmuitAccountType === "MISEmpAcc" &&
@@ -87,16 +98,6 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       });
     } else if (!user || !user.isAdmin) {
       return res.status(401).send({ ok: false, message: "Permission Denied." });
-    } else if (user.firstName === null) {
-      user = await prisma.user.update({
-        where: {
-          email,
-        },
-        data: {
-          firstName,
-          lastName,
-        },
-      });
     }
 
     //create session

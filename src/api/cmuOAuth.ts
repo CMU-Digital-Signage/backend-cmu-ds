@@ -78,6 +78,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
           firstName,
           lastName,
           email,
+          role: response2.cmuitAccountType,
         },
       });
     } else if (!user) {
@@ -90,6 +91,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         data: {
           firstName,
           lastName,
+          role: response2.cmuitAccountType,
         },
       });
     }

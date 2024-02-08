@@ -78,12 +78,11 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
           firstName,
           lastName,
           email,
-          role: response2.cmuitAccountType,
         },
       });
     } else if (!user) {
       return res.status(401).send({ ok: false, message: "Permission Denied." });
-    } else {
+    } else if (!user.firstName) {
       user = await prisma.user.update({
         where: {
           email,
@@ -91,7 +90,6 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         data: {
           firstName,
           lastName,
-          role: response2.cmuitAccountType,
         },
       });
     }

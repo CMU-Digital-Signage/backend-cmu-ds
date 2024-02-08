@@ -73,7 +73,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     });
 
     if (user?.isAdmin) {
-      if (!user.firstName) {
+      if (user.firstName === null) {
         user = await prisma.user.update({
           where: {
             email,

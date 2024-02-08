@@ -7,12 +7,16 @@ export const admin = Router();
 admin.post("/", async (req: any, res: any) => {
   try {
     try {
-      const { id, email } = req.query;
       let admin;
-      if (id) {
+      const user =  await prisma.user.findUnique({
+        where: {
+          email: req.query.email,
+        },
+      });
+      if (user) {
         admin = await prisma.user.update({
           where: {
-            id: id,
+            email: req.query.email,
           },
           data: {
             isAdmin: true,
@@ -21,12 +25,11 @@ admin.post("/", async (req: any, res: any) => {
       } else {
         admin = await prisma.user.create({
           data: {
-            email,
+            email: req.query.email,
             isAdmin: true,
           },
         });
       }
-
       return res.send({ ok: true, admin });
     } catch (err) {
       return res.status(400).send({

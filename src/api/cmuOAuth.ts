@@ -68,7 +68,11 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       },
     });
 
-    if (!user && response2.cmuitAccountType === "MISEmpAcc") {
+    if (
+      !user &&
+      response2.cmuitAccountType === "MISEmpAcc" &&
+      response2.organization_name_EN === "Faculty of Engineering"
+    ) {
       user = await prisma.user.create({
         data: {
           firstName,
@@ -77,9 +81,17 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         },
       });
     } else if (!user) {
-      return res
-        .status(401)
-        .send({ ok: false, message: "You don't have permission." });
+      return res.status(401).send({ ok: false, message: "Permission Denied." });
+    } else {
+      user = await prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          firstName,
+          lastName,
+        },
+      });
     }
 
     //create session

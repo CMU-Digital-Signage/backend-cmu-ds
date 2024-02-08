@@ -82,7 +82,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       });
     } else if (!user) {
       return res.status(401).send({ ok: false, message: "Permission Denied." });
-    } else if (!user.firstName) {
+    } else if (user.firstName === null) {
       user = await prisma.user.update({
         where: {
           email,
@@ -110,7 +110,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     return res.send({ user, token });
   } catch (err: any) {
     if (!err.response) {
-      return res.send({
+      return res.status(500).send({
         ok: false,
         message: "Cannot connect to API Server. Please try again later.",
       });

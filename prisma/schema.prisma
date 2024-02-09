@@ -11,12 +11,11 @@ model User {
   id        String   @id @default(uuid()) @db.VarChar(255)
   firstName String?  @db.VarChar(255)
   lastName  String?  @db.VarChar(255)
-  email     String   @unique(map: "User_UNIQUE") @db.VarChar(255)
+  email     String   @unique(map: "email") @db.VarChar(255)
   isAdmin   Boolean  @default(false)
   Poster    Poster[]
 
   @@unique([firstName, lastName], map: "User_UN")
-  @@index([email], map: "email")
 }
 
 model Device {
@@ -38,7 +37,8 @@ model Poster {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
   Display     Display[]
-  User        User      @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "Poster_ibfk_2")
+  Image       Image[]
+  User        User      @relation(fields: [id], references: [id], onDelete: Cascade, map: "Poster_User_FK")
 
   @@id([posterId, id])
   @@index([id], map: "id")
@@ -52,8 +52,8 @@ model Display {
   startTime  DateTime @db.Time(0)
   endTime    DateTime @db.Time(0)
   duration   Int
-  Device     Device   @relation(fields: [MACaddress], references: [MACaddress], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_1")
-  Poster     Poster   @relation(fields: [posterId], references: [posterId], onDelete: NoAction, onUpdate: NoAction, map: "Display_ibfk_2")
+  Device     Device   @relation(fields: [MACaddress], references: [MACaddress], onDelete: Cascade, map: "Display_Device_FK")
+  Poster     Poster   @relation(fields: [posterId], references: [posterId], onDelete: Cascade, map: "Display_Poster_FK")
 
   @@id([MACaddress, posterId, startDate, endDate, startTime, endTime])
   @@index([MACaddress], map: "MACaddress")
@@ -65,4 +65,13 @@ model Emergency {
   emergencyImage String  @db.LongText
   description    String? @db.VarChar(255)
   status         Boolean @default(false)
+}
+
+model Image {
+  posterId String @db.VarChar(255)
+  priority Int
+  image    String @db.LongText
+  Poster   Poster @relation(fields: [posterId], references: [posterId], onDelete: Cascade, map: "Image_Poster_FK")
+
+  @@id([posterId, priority])
 }

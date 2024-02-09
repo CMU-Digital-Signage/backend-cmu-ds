@@ -71,6 +71,13 @@ poster.post("/", async (req: any, res: any) => {
           },
         },
       });
+      const createImage = await prisma.image.create({
+        data: {
+          posterId: createPoster?.posterId,
+          image: req.body.poster.image,
+          priority: 1,
+        }
+      });
       const schedules: Schedule[] = req.body.display;
       schedules.forEach((schedule) => {
         schedule.time.forEach((time) => {
@@ -117,6 +124,34 @@ poster.put("/", async (req: any, res: any) => {
           image: req.body.poster.image,
         },
       });
+      const editImage = await prisma.image.updateMany({
+        where: {
+          posterId: req.query.posterId,
+        },
+        data: {
+          image: req.body.poster.image,
+        }
+      });
+      const schedules: Schedule[] = req.body.display;
+      schedules.forEach((schedule) => {
+        schedule.time.forEach((time) => {
+          schedule.MACaddress.forEach(async (mac) => {
+            const createDisplay = await prisma.display.updateMany({
+              where: {
+                MACaddress: mac,
+                posterId: req.query.posterId,
+              },
+              data: {
+                startDate: new Date(schedule.startDate),
+                endDate: new Date(schedule.endDate),
+                startTime: new Date(time.startTime),
+                endTime: new Date(time.endTime),
+                duration: schedule.duration,
+              },
+            });
+          });
+        });
+      });
       return res.send({ ok: true, editPoster });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -145,6 +180,11 @@ poster.delete("/", async (req: any, res: any) => {
   try {
     try {
       const deletedDisplay = await prisma.display.deleteMany({
+        where: {
+          posterId: req.query.posterId,
+        },
+      });
+      const deleteImage = await prisma.image.deleteMany({
         where: {
           posterId: req.query.posterId,
         },

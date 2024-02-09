@@ -17,13 +17,28 @@ type Schedule = {
   MACaddress: string[];
 };
 
-// GET /poster : return array of posters
-poster.get("/", async (req: any, res: any) => {
+// GET /poster/search : return array of posters
+poster.get("/search", async (req: any, res: any) => {
   try {
     const regex = `.*${req.query.title}.*`;
     const poster =
-      await prisma.$queryRaw`SELECT posterId, id, title, image, description, MACaddress, startDate, endDate, startTime, endTime, duration, createdAt
+      await prisma.$queryRaw`SELECT title, MACaddress, startDate, endDate, startTime, endTime
                               FROM Poster NATURAL JOIN Display WHERE title REGEXP ${regex}`;
+    return res.send({ ok: true, poster });
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
+// GET /poster : return array of posters
+poster.get("/", async (req: any, res: any) => {
+  try {
+    const poster =
+      await prisma.$queryRaw`SELECT posterId, id, title, description, createdAt,
+                              priority, image, MACaddress, startDate, endDate, startTime, endTime, duration
+                              FROM Poster NATURAL JOIN Image NATURAL JOIN Display`;
     return res.send({ ok: true, poster });
   } catch (err) {
     return res

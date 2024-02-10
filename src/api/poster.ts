@@ -132,16 +132,19 @@ poster.put("/", async (req: any, res: any) => {
           image: req.body.poster.image,
         }
       });
+      const deletedDisplay = await prisma.display.deleteMany({
+        where: {
+          posterId: req.query.posterId,
+        },
+      });
       const schedules: Schedule[] = req.body.display;
       schedules.forEach((schedule) => {
         schedule.time.forEach((time) => {
           schedule.MACaddress.forEach(async (mac) => {
-            const createDisplay = await prisma.display.updateMany({
-              where: {
+            const createDisplay = await prisma.display.createMany({
+              data: {
                 MACaddress: mac,
                 posterId: req.query.posterId,
-              },
-              data: {
                 startDate: new Date(schedule.startDate),
                 endDate: new Date(schedule.endDate),
                 startTime: new Date(time.startTime),

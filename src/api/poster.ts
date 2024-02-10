@@ -63,7 +63,6 @@ poster.post("/", async (req: any, res: any) => {
         data: {
           title: req.body.poster.title,
           description: req.body.poster.description,
-          image: req.body.poster.image,
           User: {
             connect: {
               id: user?.id,
@@ -76,7 +75,7 @@ poster.post("/", async (req: any, res: any) => {
           posterId: createPoster?.posterId,
           image: req.body.poster.image,
           priority: 1,
-        }
+        },
       });
       const schedules: Schedule[] = req.body.display;
       schedules.forEach((schedule) => {
@@ -121,7 +120,6 @@ poster.put("/", async (req: any, res: any) => {
         data: {
           title: req.body.poster.title,
           description: req.body.poster.description,
-          image: req.body.poster.image,
         },
       });
       const editImage = await prisma.image.updateMany({
@@ -130,7 +128,7 @@ poster.put("/", async (req: any, res: any) => {
         },
         data: {
           image: req.body.poster.image,
-        }
+        },
       });
       const schedules: Schedule[] = req.body.display;
       schedules.forEach((schedule) => {

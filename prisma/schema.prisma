@@ -33,7 +33,6 @@ model Poster {
   id          String    @db.VarChar(255)
   title       String    @unique(map: "title") @db.VarChar(255)
   description String?   @db.VarChar(255)
-  image       String    @db.LongText
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
   Display     Display[]

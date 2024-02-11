@@ -68,19 +68,15 @@ poster.post("/", async (req: any, res: any) => {
         data: {
           title: req.body.poster.title,
           description: req.body.poster.description,
-          User: {
-            connect: {
-              id: user?.id,
-            },
-          },
+          User: { connect: { id: user?.id } },
         },
       });
 
-      const imageCol: imageCollection[] = req.body.image;
+      const imageCol: imageCollection[] = req.body.poster.image;
       imageCol.forEach(async (image) => {
         const createImage = await prisma.image.create({
           data: {
-            posterId: createPoster?.posterId,
+            Poster: { connect: { posterId: createPoster?.posterId } },
             image: image.image,
             priority: image.priority,
           },

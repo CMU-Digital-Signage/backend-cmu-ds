@@ -12,7 +12,12 @@ const prefix = "/api/v1";
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", process.env.URL_PATH_WEB_APP as string],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:4000",
+      "http://10.10.182.134:4000",
+      process.env.URL_PATH_WEB_APP as string,
+    ],
     credentials: true,
   })
 );

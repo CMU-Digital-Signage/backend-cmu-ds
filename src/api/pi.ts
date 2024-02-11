@@ -40,7 +40,7 @@ pi.get("/poster", async (req: any, res: any) => {
 
     const poster = await prisma.$queryRaw`
       SELECT image, startDate, endDate, startTime, endTime, duration
-      FROM Display NATURAL JOIN Poster
+      FROM Display NATURAL JOIN Poster NATURAL JOIN Image
       WHERE MACaddress = ${req.query.mac}
       AND startDate <= ${date} AND endDate >= ${date}
       `;

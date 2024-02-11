@@ -17,6 +17,11 @@ type Schedule = {
   MACaddress: string[];
 };
 
+type imageCollection = {
+  image: string;
+  priority: number;
+};
+
 // GET /poster/search : return array of posters
 poster.get("/search", async (req: any, res: any) => {
   try {
@@ -70,13 +75,18 @@ poster.post("/", async (req: any, res: any) => {
           },
         },
       });
-      const createImage = await prisma.image.create({
-        data: {
-          posterId: createPoster?.posterId,
-          image: req.body.poster.image,
-          priority: 1,
-        },
+
+      const imageCol: imageCollection[] = req.body.image;
+      imageCol.forEach(async (image) => {
+        const createImage = await prisma.image.create({
+          data: {
+            posterId: createPoster?.posterId,
+            image: image.image,
+            priority: image.priority,
+          },
+        });
       });
+
       const schedules: Schedule[] = req.body.display;
       schedules.forEach((schedule) => {
         schedule.time.forEach((time) => {
@@ -180,16 +190,6 @@ poster.put("/", async (req: any, res: any) => {
 poster.delete("/", async (req: any, res: any) => {
   try {
     try {
-      const deletedDisplay = await prisma.display.deleteMany({
-        where: {
-          posterId: req.query.posterId,
-        },
-      });
-      const deleteImage = await prisma.image.deleteMany({
-        where: {
-          posterId: req.query.posterId,
-        },
-      });
       const deletePoster = await prisma.poster.delete({
         where: {
           posterId: req.query.posterId,

@@ -33,12 +33,7 @@ const server = app.listen(port, () =>
 
 const io = socket(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:4000",
-      "http://10.10.182.134:4000",
-      process.env.URL_PATH_WEB_APP as string,
-    ],
+    origin: "*",
     credentials: true,
   },
 });

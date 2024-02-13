@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
+import { io } from "../app";
 
 export const poster = Router();
 
@@ -191,6 +192,7 @@ poster.delete("/", async (req: any, res: any) => {
           posterId: req.query.posterId,
         },
       });
+      io.emit("deletePoster", deletePoster);
       return res.send({ ok: true, deletePoster });
     } catch (err) {
       return res.status(400).send({
@@ -237,6 +239,7 @@ poster.post("/emergency", async (req: any, res: any) => {
           description: req.body.description,
         },
       });
+      io.emit("addEmergency", emergency);
       return res.send({ ok: true, emergency });
     } else {
       return res.status(400).send({
@@ -261,9 +264,11 @@ poster.put("/emergency", async (req: any, res: any) => {
         },
         data: {
           incidentName: req.body.incidentName,
+          emergencyImage: req.body.emergencyImage,
           description: req.body.description,
         },
       });
+      io.emit("updateEmergency", req.query.incidentName, emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -296,6 +301,7 @@ poster.delete("/emergency", async (req: any, res: any) => {
           incidentName: req.query.incidentName,
         },
       });
+      io.emit("deleteEmergency", emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
       return res.status(400).send({

@@ -2,6 +2,7 @@ import axios from "axios";
 import jwt from "jsonwebtoken";
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
+import { io } from "../app";
 
 export const cmuOAuth = Router();
 
@@ -96,6 +97,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
           email,
         },
       });
+      io.emit("updateUser", user);
     } else if (!user || !user.isAdmin) {
       return res.status(401).send({ ok: false, message: "Permission Denied." });
     }

@@ -4,9 +4,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import { routes } from "./api";
-import { Socket, Server } from "socket.io";
-import { createServer } from "http";
+import { Socket } from "socket.io";
 
+const socket = require("socket.io");
 dotenv.config();
 const app = express();
 const port = process.env.PORT;
@@ -27,24 +27,16 @@ app.use(cookieParser());
 app.use(json({ limit: "50mb" }));
 app.use(`${prefix}/`, routes);
 
-const httpServer = createServer(app);
-// const server = app.listen(port, () =>
-//   console.log(`Server running on port ${port}!`)
-// );
+const server = app.listen(port, () =>
+  console.log(`Server running on port ${port}!`)
+);
 
-const io = new Server(httpServer, {
+const io = socket(server, {
   cors: {
     origin: "*",
     credentials: true,
   },
 });
-
-// const io = socket(server, {
-//   cors: {
-//     origin: "*",
-//     credentials: true,
-//   },
-// });
 
 io.on("connection", (socket: Socket) => {
   // console.log("user is connected");
@@ -52,7 +44,5 @@ io.on("connection", (socket: Socket) => {
     // console.log(`socket ${socket.id} disconnected`);
   });
 });
-
-httpServer.listen(port);
 
 export { io };

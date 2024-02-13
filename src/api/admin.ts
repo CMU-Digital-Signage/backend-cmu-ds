@@ -1,5 +1,6 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
+import { io } from "../app";
 
 export const admin = Router();
 
@@ -8,7 +9,7 @@ admin.post("/", async (req: any, res: any) => {
   try {
     try {
       let admin;
-      const user =  await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: {
           email: req.query.email,
         },
@@ -30,6 +31,7 @@ admin.post("/", async (req: any, res: any) => {
           },
         });
       }
+      io.emit("addAdmin", admin);
       return res.send({ ok: true, admin });
     } catch (err) {
       return res.status(400).send({
@@ -57,6 +59,7 @@ admin.delete("/", async (req: any, res: any) => {
           isAdmin: false,
         },
       });
+      io.emit("deleteAdmin", user);
       return res.send({ ok: true, user });
     } catch (err) {
       console.log(err);

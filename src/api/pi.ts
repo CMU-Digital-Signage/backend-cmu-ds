@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
+import { io } from "../app";
 
 export const pi = Router();
 
@@ -15,6 +16,7 @@ pi.post("/", async (req: any, res: any) => {
           MACaddress: req.query.mac,
         },
       });
+      io.emit("addPi", device);
       return res.send({ ok: true, message: "Add device successfully." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {

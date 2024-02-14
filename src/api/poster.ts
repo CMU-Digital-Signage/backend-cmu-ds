@@ -331,12 +331,7 @@ poster.put("/emergency/activate", async (req: any, res: any) => {
       return res.send({ ok: true, emergency });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2002") {
-          return res.status(400).send({
-            ok: false,
-            message: "incidentName is already used.",
-          });
-        } else if (err.code === "P2025") {
+        if (err.code === "P2025") {
           return res.status(400).send({
             ok: false,
             message: "Record to edit emergency poster not found.",

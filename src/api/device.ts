@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
+import { io } from "../app";
 
 export const device = Router();
 
@@ -21,41 +22,6 @@ device.get("/", async (req: any, res: any) => {
 });
 
 // POST /device : add device into database
-// device.post(
-//   "/",
-//   async (req: any, res: any) => {
-//     try {
-//       try {
-//         const device = await prisma.device.create({
-//           data: {
-//             deviceName: req.query.deviceName,
-//             MACaddress: req.query.MACaddress,
-//             room: parseInt(req.query.room),
-//             location: req.query.location,
-//             description: req.query.description,
-//           },
-//         });
-//         return res.send({ ok: true, message: "Add device successfully." });
-//       } catch (err) {
-//         if (err instanceof Prisma.PrismaClientKnownRequestError) {
-//           if (err.code === "P2002") {
-//             return res
-//               .status(400)
-//               .send({
-//                 ok: false,
-//                 message: "Device Name or MAC Address are already used.",
-//               });
-//           }
-//         }
-//       }
-//     } catch (err) {
-//       return res
-//         .status(500)
-//         .send({ ok: false, message: "Internal Server Error" });
-//     }
-//   }
-// );
-
 device.post("/", async (req: any, res: any) => {
   try {
     try {
@@ -87,6 +53,7 @@ device.post("/", async (req: any, res: any) => {
           },
         });
       }
+      io.emit("addDevice", device);
       return res.send({ ok: true, message: "Add device successfully." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -119,6 +86,7 @@ device.put("/", async (req: any, res: any) => {
           description: req.body.description,
         },
       });
+      io.emit("updateDevice", device);
       return res.send({ ok: true, message: "Edit device successfully." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -151,6 +119,7 @@ device.delete("/", async (req: any, res: any) => {
           MACaddress: req.query.MACaddress,
         },
       });
+      io.emit("deleteDevice", device);
       return res.send({ ok: true, message: "Delete device successfully." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {

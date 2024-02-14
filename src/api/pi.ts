@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
+import { io } from "../app";
 
 export const pi = Router();
 
@@ -15,6 +16,7 @@ pi.post("/", async (req: any, res: any) => {
           MACaddress: req.query.mac,
         },
       });
+      io.emit("addPi", device);
       return res.send({ ok: true, message: "Add device successfully." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -39,8 +41,8 @@ pi.get("/poster", async (req: any, res: any) => {
     const date = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
     const poster = await prisma.$queryRaw`
-      SELECT image, startDate, endDate, startTime, endTime, duration
-      FROM Display NATURAL JOIN Poster
+      SELECT title, priority, image, startDate, endDate, startTime, endTime, duration
+      FROM Display NATURAL JOIN Poster NATURAL JOIN Image
       WHERE MACaddress = ${req.query.mac}
       AND startDate <= ${date} AND endDate >= ${date}
       `;

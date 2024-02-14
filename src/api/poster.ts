@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
+import { io } from "../app";
 
 export const poster = Router();
 
@@ -15,6 +16,11 @@ type Schedule = {
   ];
   duration: number;
   MACaddress: string[];
+};
+
+type imageCollection = {
+  image: string;
+  priority: number;
 };
 
 // GET /poster/search : return array of posters
@@ -63,20 +69,21 @@ poster.post("/", async (req: any, res: any) => {
         data: {
           title: req.body.poster.title,
           description: req.body.poster.description,
-          User: {
-            connect: {
-              id: user?.id,
-            },
+          User: { connect: { id: user?.id } },
+        },
+      });
+
+      const imageCol: imageCollection[] = req.body.poster.image;
+      imageCol.forEach(async (image) => {
+        const createImage = await prisma.image.create({
+          data: {
+            Poster: { connect: { posterId: createPoster?.posterId } },
+            image: image.image,
+            priority: image.priority,
           },
-        },
+        });
       });
-      const createImage = await prisma.image.create({
-        data: {
-          posterId: createPoster?.posterId,
-          image: req.body.poster.image,
-          priority: 1,
-        },
-      });
+
       const schedules: Schedule[] = req.body.display;
       schedules.forEach((schedule) => {
         schedule.time.forEach((time) => {
@@ -180,21 +187,12 @@ poster.put("/", async (req: any, res: any) => {
 poster.delete("/", async (req: any, res: any) => {
   try {
     try {
-      const deletedDisplay = await prisma.display.deleteMany({
-        where: {
-          posterId: req.query.posterId,
-        },
-      });
-      const deleteImage = await prisma.image.deleteMany({
-        where: {
-          posterId: req.query.posterId,
-        },
-      });
       const deletePoster = await prisma.poster.delete({
         where: {
           posterId: req.query.posterId,
         },
       });
+      io.emit("deletePoster", deletePoster);
       return res.send({ ok: true, deletePoster });
     } catch (err) {
       return res.status(400).send({
@@ -241,6 +239,7 @@ poster.post("/emergency", async (req: any, res: any) => {
           description: req.body.description,
         },
       });
+      io.emit("addEmergency", emergency);
       return res.send({ ok: true, emergency });
     } else {
       return res.status(400).send({
@@ -265,9 +264,11 @@ poster.put("/emergency", async (req: any, res: any) => {
         },
         data: {
           incidentName: req.body.incidentName,
+          emergencyImage: req.body.emergencyImage,
           description: req.body.description,
         },
       });
+      io.emit("updateEmergency", req.query.incidentName, emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -300,6 +301,7 @@ poster.delete("/emergency", async (req: any, res: any) => {
           incidentName: req.query.incidentName,
         },
       });
+      io.emit("deleteEmergency", emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
       return res.status(400).send({

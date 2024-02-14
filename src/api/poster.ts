@@ -315,3 +315,93 @@ poster.delete("/emergency", async (req: any, res: any) => {
       .send({ ok: false, message: "Internal Server Error" });
   }
 });
+
+// PUT /poster/emergency/activate : change status of emergency poster to activate
+poster.put("/emergency/activate", async (req: any, res: any) => {
+  try {
+    try {
+      const emergency = await prisma.emergency.update({
+        where: {
+          incidentName: req.query.incidentName,
+        },
+        data: {
+          status: true
+        },
+      });
+      return res.send({ ok: true, emergency });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2025") {
+          return res.status(400).send({
+            ok: false,
+            message: "Record to edit emergency poster not found.",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
+// POST /poster/emergency/activate : change status of emergency poster to activate
+poster.post("/emergency/activate", async (req: any, res: any) => {
+  try {
+    try {
+      const emergency = await prisma.emergency.update({
+        where: {
+          incidentName: req.query.incidentName,
+        },
+        data: {
+          status: true
+        },
+      });
+      return res.send({ ok: true, emergency });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2025") {
+          return res.status(400).send({
+            ok: false,
+            message: "Record to edit emergency poster not found.",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
+// DELETE /poster/emergency/activate : change status of emergency poster to inactivate
+poster.delete("/emergency/activate", async (req: any, res: any) => {
+  try {
+    try {
+      const emergency = await prisma.emergency.update({
+        where: {
+          incidentName: req.query.incidentName,
+        },
+        data: {
+          status: false
+        },
+      });
+      return res.send({ ok: true, emergency });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === "P2025") {
+          return res.status(400).send({
+            ok: false,
+            message: "Record to edit emergency poster not found.",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});

@@ -55,17 +55,18 @@ pi.get("/poster", async (req: any, res: any) => {
   }
 });
 
-pi.get("/poster/emergency", async (req: any, res: any) => {
-  try {
-    const emergency = await prisma.emergency.findMany({
-      where: {
-        status: true,
-      }
-    });
-    return res.send({ ok: true, emergency });
-  } catch (err) {
-    return res
-      .status(500)
-      .send({ ok: false, message: "Internal Server Error", err });
-  }
-});
+// ไม่ได้ใช้แล้วอะ ลืมว่าใช้ socket แล้ว ขอโทษที
+// pi.get("/poster/emergency", async (req: any, res: any) => {
+//   try {
+//     const emergency = await prisma.emergency.findMany({
+//       where: {
+//         status: true,
+//       }
+//     });
+//     return res.send({ ok: true, emergency });
+//   } catch (err) {
+//     return res
+//       .status(500)
+//       .send({ ok: false, message: "Internal Server Error", err });
+//   }
+// });

@@ -102,6 +102,8 @@ poster.post("/", async (req: any, res: any) => {
           });
         });
       });
+
+      // io.emit("addPoster", );
       return res.send({ ok: true, createPoster });
     } else {
       return res.status(400).send({
@@ -160,6 +162,8 @@ poster.put("/", async (req: any, res: any) => {
           });
         });
       });
+
+      // io.emit("updatePoster", );
       return res.send({ ok: true, editPoster });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -328,6 +332,7 @@ poster.put("/emergency/activate", async (req: any, res: any) => {
           status: true
         },
       });
+
       return res.send({ ok: true, emergency });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -358,6 +363,7 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
           status: true
         },
       });
+      io.emit("activate", emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -388,6 +394,7 @@ poster.delete("/emergency/activate", async (req: any, res: any) => {
           status: false
         },
       });
+      io.emit("deactivate", emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {

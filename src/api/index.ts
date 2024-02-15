@@ -7,6 +7,7 @@ import { poster } from "./poster";
 import { user } from "./user";
 import { pi } from "./pi";
 import { jwtMiddleware, handleJWTError } from "../utils/authen";
+import { email } from "./email";
 
 export const routes = express.Router();
 
@@ -25,5 +26,6 @@ routes.use("/user", user);
 routes.use("/admin", admin);
 routes.use("/device", device);
 routes.use("/poster", poster);
+routes.use("/email", email);
 
 routes.use(handleJWTError);

@@ -33,6 +33,7 @@ const server = app.listen(port, () =>
 
 const io = socket(server, {
   cors: { origin: "*" },
+  transports: ["polling", "websocket"],
 });
 
 io.on("connection", (socket: Socket) => {

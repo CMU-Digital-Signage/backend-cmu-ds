@@ -4,13 +4,23 @@ import { Prisma } from "@prisma/client";
 import { io } from "../app";
 import nodemailer from "nodemailer";
 import { dirname } from "path";
+import jwt from "jsonwebtoken";
 
 export const email = Router();
 
 email.post("/", async (req: any, res: Response) => {
   try {
-    const userEmail = req.auth.email;
-    const link = "google.com"
+    const email = req.auth.email;
+    const token = jwt.sign(
+      {
+        email
+      },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: "1800s", // Token will last for 3 min only
+      }
+    );
+    const link = req.body.link + token;
 
     let transporter = nodemailer.createTransport({
       service: "gmail",
@@ -24,7 +34,7 @@ email.post("/", async (req: any, res: Response) => {
 
     const mailOptions = {
       from: "CPE Digital Signage <noreply>",
-      to: "auswitch07@gmail.com",
+      to: [email],
       subject: "Reset Emergency Password",
       attachments: [
         {

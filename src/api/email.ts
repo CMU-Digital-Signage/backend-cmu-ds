@@ -13,7 +13,7 @@ email.post("/", async (req: any, res: Response) => {
     const email = req.auth.email;
     const token = jwt.sign(
       {
-        email
+        email,
       },
       process.env.JWT_SECRET!,
       {
@@ -30,16 +30,15 @@ email.post("/", async (req: any, res: Response) => {
         pass: process.env.PASS_SEND_EMAIL,
       },
     });
-    
 
     const mailOptions = {
       from: "CPE Digital Signage <noreply>",
-      to: [email],
+      to: email,
       subject: "Reset Emergency Password",
       attachments: [
         {
           filename: "cpe-logo.jpg",
-          path: `${__dirname}/../image/cpe-logo.png`,
+          path: `${__dirname}/../../image/cpe-logo.png`,
           cid: "cpelogo", //same cid value as in the html img src
         },
       ],
@@ -96,7 +95,7 @@ email.post("/", async (req: any, res: Response) => {
       </tbody>
     </table>
   </body>
-
+  
 </html>`,
     };
 
@@ -107,7 +106,7 @@ email.post("/", async (req: any, res: Response) => {
         console.log("Email sent: " + info.response);
       }
     });
-    res.send({ ok: true });
+    return res.send({ ok: true });
   } catch (err) {
     return res
       .status(500)

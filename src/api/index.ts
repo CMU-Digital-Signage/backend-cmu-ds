@@ -15,6 +15,7 @@ const pathToRegexp = require("path-to-regexp");
 const unprotected = [
   pathToRegexp("/api/v1/pi*"),
   pathToRegexp("/api/v1/cmuOAuth"),
+  pathToRegexp("/api/v1/poster/emergency*"),
 ];
 
 routes.use(jwtMiddleware.unless({ path: unprotected }));

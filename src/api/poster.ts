@@ -356,13 +356,15 @@ poster.put("/emergency/activate", async (req: any, res: any) => {
 poster.post("/emergency/activate", async (req: any, res: any) => {
   try {
     const user = await prisma.user.findMany();
+    let emergency;
     const password = req.body.password;
+    let pass = false;
 
     user.forEach(async (e) => {
       if (e.password) {
         const match = await bcrypt.compare(password, e.password);
         if (match) {
-          const emergency = await prisma.emergency.update({
+          emergency = await prisma.emergency.update({
             where: {
               incidentName: req.query.incidentName,
             },
@@ -371,12 +373,14 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
             },
           });
           io.emit("activate", emergency);
-          return res.send({ ok: true, emergency });
+          pass = true;
+          return;
         }
       }
     });
-
-    return res.status(400).send({ ok: false, message: "Password incorrect" });
+    if (pass) return res.send({ ok: true, emergency });
+    else
+      return res.status(400).send({ ok: false, message: "Password incorrect" });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2025") {

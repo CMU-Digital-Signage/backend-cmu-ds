@@ -1,10 +1,12 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
+import bcrypt from "bcrypt";
 import { io } from "../app";
 
 export const poster = Router();
 
+const saltRounds = 10;
 type Schedule = {
   startDate: string;
   endDate: string;
@@ -17,7 +19,6 @@ type Schedule = {
   duration: number;
   MACaddress: string[];
 };
-
 type imageCollection = {
   image: string;
   priority: number;
@@ -329,7 +330,7 @@ poster.put("/emergency/activate", async (req: any, res: any) => {
           incidentName: req.query.incidentName,
         },
         data: {
-          status: true
+          status: true,
         },
       });
 
@@ -354,28 +355,41 @@ poster.put("/emergency/activate", async (req: any, res: any) => {
 // POST /poster/emergency/activate : change status of emergency poster to activate
 poster.post("/emergency/activate", async (req: any, res: any) => {
   try {
-    try {
-      const emergency = await prisma.emergency.update({
-        where: {
-          incidentName: req.query.incidentName,
-        },
-        data: {
-          status: true
-        },
-      });
-      io.emit("activate", emergency);
-      return res.send({ ok: true, emergency });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2025") {
-          return res.status(400).send({
-            ok: false,
-            message: "Record to edit emergency poster not found.",
+    const user = await prisma.user.findMany();
+    let emergency;
+    const password = req.body.password;
+    let pass = false;
+
+    user.forEach(async (e) => {
+      if (e.password) {
+        const match = await bcrypt.compare(password, e.password);
+        if (match) {
+          emergency = await prisma.emergency.update({
+            where: {
+              incidentName: req.query.incidentName,
+            },
+            data: {
+              status: true,
+            },
           });
+          io.emit("activate", emergency);
+          pass = true;
+          return;
         }
       }
-    }
+    });
+    if (pass) return res.send({ ok: true, emergency });
+    else
+      return res.status(400).send({ ok: false, message: "Password incorrect" });
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") {
+        return res.status(400).send({
+          ok: false,
+          message: "Record to edit emergency poster not found.",
+        });
+      }
+    }
     return res
       .status(500)
       .send({ ok: false, message: "Internal Server Error", err });
@@ -391,7 +405,7 @@ poster.delete("/emergency/activate", async (req: any, res: any) => {
           incidentName: req.query.incidentName,
         },
         data: {
-          status: false
+          status: false,
         },
       });
       io.emit("deactivate", emergency);

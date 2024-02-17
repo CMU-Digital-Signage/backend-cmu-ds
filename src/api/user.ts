@@ -1,8 +1,7 @@
 import { Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Request } from "express-jwt";
-import bcrypt, { hash } from "bcrypt";
-import { error, log } from "console";
+import bcrypt from "bcrypt";
 export const user = Router();
 
 const saltRounds = 10;

@@ -61,8 +61,8 @@ poster.get("/", async (req: any, res: any) => {
           (p: any) =>
             p.MACaddress === e.MACaddress &&
             p.title === e.title &&
-            p.startDate === e.startDate &&
-            p.endDate === e.endDate &&
+            p.startDate.toDateString() === e.startDate.toDateString() &&
+            p.endDate.toDateString() === e.endDate.toDateString() &&
             p.startTime.toTimeString() === e.startTime.toTimeString() &&
             p.endTime.toTimeString() === e.endTime.toTimeString()
         )

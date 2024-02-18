@@ -12,7 +12,7 @@ email.post("/", async (req: any, res: Response) => {
       { email },
       process.env.JWT_SECRET!,
       // Token will last for 3 min only
-      { expiresIn: "1800s" }
+      { expiresIn: "180s" }
     );
     const link = req.body.link + token;
 

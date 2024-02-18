@@ -174,7 +174,7 @@ poster.put("/", async (req: any, res: any) => {
           },
         });
       });
-      
+
       const deletedDisplay = await prisma.display.deleteMany({
         where: {
           posterId: req.query.posterId,
@@ -395,8 +395,8 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
     const password = req.body.password;
     let pass = false;
 
-    user.forEach(async (e) => {
-      if (e.password) {
+    for (const e of user) {
+      if (e.password?.length) {
         const match = await bcrypt.compare(password, e.password);
         if (match) {
           emergency = await prisma.emergency.update({
@@ -408,14 +408,16 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
             },
           });
           io.emit("activate", emergency);
-          pass = true;
-          return;
+          pass = match;
+          break;
         }
       }
-    });
+    }
     if (pass) return res.send({ ok: true, emergency });
     else
-      return res.status(400).send({ ok: false, message: "Password incorrect" });
+      return res
+        .status(400)
+        .send({ ok: false, message: "Password incorrect." });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2025") {

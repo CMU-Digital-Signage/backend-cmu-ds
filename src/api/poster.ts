@@ -161,14 +161,20 @@ poster.put("/", async (req: any, res: any) => {
           description: req.body.poster.description,
         },
       });
-      const editImage = await prisma.image.updateMany({
-        where: {
-          posterId: req.query.posterId,
-        },
-        data: {
-          image: req.body.poster.image,
-        },
+
+      const imageCol: imageCollection[] = req.body.poster.image;
+      imageCol.forEach(async (image) => {
+        const editImage = await prisma.image.updateMany({
+          where: {
+            posterId: req.query.posterId,
+            priority: image.priority,
+          },
+          data: {
+            image: image.image,
+          },
+        });
       });
+      
       const deletedDisplay = await prisma.display.deleteMany({
         where: {
           posterId: req.query.posterId,

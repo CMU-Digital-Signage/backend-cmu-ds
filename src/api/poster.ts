@@ -42,10 +42,29 @@ poster.get("/search", async (req: any, res: any) => {
 // GET /poster : return array of posters
 poster.get("/", async (req: any, res: any) => {
   try {
-    const poster =
+    const data: any =
       await prisma.$queryRaw`SELECT posterId, id, title, description, createdAt,
                               priority, image, MACaddress, startDate, endDate, startTime, endTime, duration
                               FROM Poster NATURAL JOIN Image NATURAL JOIN Display`;
+
+    let poster = [] as any;
+    data.forEach((e: any) => {
+      const imgCol = data.filter((p: any) => p.title === e.title);
+      let image = [] as imageCollection[];
+      imgCol.forEach((p: any) => {
+        if (!image.find((e) => e.priority === p.priority)) {
+          image.push({ image: p.image, priority: p.priority });
+        }
+      });
+      if (!poster.find((p: any) => p.title === e.title)) {
+        const { priority, ...rest } = e;
+        poster.push({
+          ...rest,
+          image: image,
+        });
+      }
+    });
+
     return res.send({ ok: true, poster });
   } catch (err) {
     return res

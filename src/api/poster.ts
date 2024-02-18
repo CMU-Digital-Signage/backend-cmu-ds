@@ -56,7 +56,17 @@ poster.get("/", async (req: any, res: any) => {
           image.push({ image: p.image, priority: p.priority });
         }
       });
-      if (!poster.find((p: any) => p.title === e.title)) {
+      if (
+        !poster.find(
+          (p: any) =>
+            p.MACaddress === e.MACaddress &&
+            p.title === e.title &&
+            p.startDate === e.startDate &&
+            p.endDate === e.endDate &&
+            p.startTime.toTimeString() === e.startTime.toTimeString() &&
+            p.endTime.toTimeString() === e.endTime.toTimeString()
+        )
+      ) {
         const { priority, ...rest } = e;
         poster.push({
           ...rest,

@@ -34,12 +34,12 @@ const server = app.listen(port, () =>
 const io = socket(server, {
   cors: { origin: "*" },
   transports: ["polling", "websocket"],
-});
+}).of("/api/v1");
 
 io.on("connection", (socket: Socket) => {
-  // console.log("user is connected");
+  console.log("user is connected");
   socket.on("disconnect", () => {
-    // console.log(`socket ${socket.id} disconnected`);
+    console.log(`socket ${socket.id} disconnected`);
   });
 });
 

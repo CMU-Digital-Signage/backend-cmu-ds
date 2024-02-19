@@ -87,7 +87,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       }
     } else if (
       !user &&
-      response2.cmuitAccountType === "MISEmpAcc" &&
+      response2.itaccounttype_id === "MISEmpAcc" &&
       response2.organization_name_EN === "Faculty of Engineering"
     ) {
       user = await prisma.user.create({

@@ -73,7 +73,8 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       },
     });
 
-    if (user?.isAdmin) {
+    if (user && response2.itaccounttype_id === "StdAcc") {
+    } else if (user?.isAdmin) {
       if (user.firstName === null) {
         user = await prisma.user.update({
           where: {
@@ -99,7 +100,12 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       });
       io.emit("updateUser", user);
     } else if (!user || !user.isAdmin) {
-      return res.status(401).send({ ok: false, message: "Permission Denied." });
+      return res
+        .status(401)
+        .send({
+          ok: false,
+          message: "401 | Your CMU account was not authorized for this website",
+        });
     }
 
     //create session

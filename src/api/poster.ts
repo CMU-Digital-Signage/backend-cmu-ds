@@ -277,6 +277,7 @@ poster.post("/emergency", async (req: any, res: any) => {
           incidentName: req.body.incidentName,
           emergencyImage: req.body.emergencyImage,
           description: req.body.description,
+          status: req.body.status ? true : false,
         },
       });
       io.emit("addEmergency", emergency);

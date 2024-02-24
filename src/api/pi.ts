@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
+import { mqttClient } from "../app";
 
 export const pi = Router();
 
@@ -48,6 +49,44 @@ pi.get("/poster", async (req: any, res: any) => {
       `;
 
     return res.send({ ok: true, poster });
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
+pi.post("/on", async (req: any, res: any) => {
+  try {
+    mqttClient.publish("pi/on_off", req.query.mac + "/on");
+    await prisma.device.update({
+      where: {
+        MACaddress: req.query.mac,
+      },
+      data: {
+        status : true
+      },
+    })
+    return res.send({ ok: true });
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
+pi.post("/off", async (req: any, res: any) => {
+  try {
+    mqttClient.publish("pi/on_off", req.query.mac + "/off");
+    await prisma.device.update({
+      where: {
+        MACaddress: req.query.mac,
+      },
+      data: {
+        status : false
+      },
+    })
+    return res.send({ ok: true });
   } catch (err) {
     return res
       .status(500)

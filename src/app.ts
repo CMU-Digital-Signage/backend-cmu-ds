@@ -53,15 +53,15 @@ const mqttClient = mqtt.connect({
 });
 
 mqttClient.on("connect", () => {
-  console.log("connected.");
+  // console.log("connected.");
 });
 
 mqttClient.on("error", (error) => {
-  console.log(error);
+  // console.log(error);
 });
 
 mqttClient.on("message", (topic, message) => {
-  console.log(topic, message.toString());
+  // console.log(topic, message.toString());
   mqttClient.end();
 });
 

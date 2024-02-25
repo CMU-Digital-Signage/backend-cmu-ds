@@ -67,6 +67,7 @@ pi.post("/on", async (req: any, res: any) => {
         status : true
       },
     })
+    io.emit("turnOnDevice", req.query.mac);
     return res.send({ ok: true });
   } catch (err) {
     return res
@@ -86,6 +87,7 @@ pi.post("/off", async (req: any, res: any) => {
         status : false
       },
     })
+    io.emit("turnOffDevice", req.query.mac);
     return res.send({ ok: true });
   } catch (err) {
     return res

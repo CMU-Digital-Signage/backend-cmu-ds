@@ -41,12 +41,40 @@ pi.get("/poster", async (req: any, res: any) => {
   try {
     const date = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
-    const poster = await prisma.$queryRaw`
-      SELECT title, priority, image, startDate, endDate, startTime, endTime, duration
+    const data: any = await prisma.$queryRaw`
+      SELECT title, priority, image, startDate, endDate, startTime, endTime, duration, createdAt
       FROM Display NATURAL JOIN Poster NATURAL JOIN Image
       WHERE MACaddress = ${req.query.mac}
       AND startDate <= ${date} AND endDate >= ${date}
       `;
+
+    let poster = [] as any;
+    data.forEach((e: any) => {
+      const imgCol = data.filter((p: any) => p.title === e.title);
+      let image: any[] = [];
+      imgCol.forEach((p: any) => {
+        if (!image.find((e) => e.priority === p.priority)) {
+          image.push({ image: p.image, priority: p.priority });
+        }
+      });
+      if (
+        !poster.find(
+          (p: any) =>
+            p.MACaddress === e.MACaddress &&
+            p.title === e.title &&
+            p.startDate.toDateString() === e.startDate.toDateString() &&
+            p.endDate.toDateString() === e.endDate.toDateString() &&
+            p.startTime.toTimeString() === e.startTime.toTimeString() &&
+            p.endTime.toTimeString() === e.endTime.toTimeString()
+        )
+      ) {
+        const { priority, ...rest } = e;
+        poster.push({
+          ...rest,
+          image: image,
+        });
+      }
+    });
 
     return res.send({ ok: true, poster });
   } catch (err) {
@@ -64,9 +92,9 @@ pi.post("/on", async (req: any, res: any) => {
         MACaddress: req.query.mac,
       },
       data: {
-        status : true
+        status: true,
       },
-    })
+    });
     io.emit("turnOnDevice", req.query.mac);
     return res.send({ ok: true });
   } catch (err) {
@@ -84,9 +112,9 @@ pi.post("/off", async (req: any, res: any) => {
         MACaddress: req.query.mac,
       },
       data: {
-        status : false
+        status: false,
       },
-    })
+    });
     io.emit("turnOffDevice", req.query.mac);
     return res.send({ ok: true });
   } catch (err) {

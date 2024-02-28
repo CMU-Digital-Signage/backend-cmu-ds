@@ -2,7 +2,19 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
-import { mqttClient } from "../app";
+import mqtt from "mqtt";
+
+const mqttClient = mqtt.connect({
+  host: "d887ebbbf00045b6b1405a5f76f66686.s1.eu.hivemq.cloud",
+  port: 8883,
+  protocol: "mqtts",
+  username: "cpe_ds",
+  password: "CPEds261361",
+});
+
+mqttClient.on("connect", () => {
+  // console.log("connected.");
+});
 
 export const pi = Router();
 

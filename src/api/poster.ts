@@ -139,7 +139,7 @@ poster.post("/", async (req: any, res: any) => {
       });
 
       io.emit("addPoster", newPoster);
-      return res.send({ ok: true });
+      return res.send({ ok: true, newPoster });
     } else {
       return res.status(400).send({
         ok: false,
@@ -212,7 +212,7 @@ poster.put("/", async (req: any, res: any) => {
     });
 
     io.emit("updatePoster", updatePoster);
-    return res.send({ ok: true });
+    return res.send({ ok: true, updatePoster });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {

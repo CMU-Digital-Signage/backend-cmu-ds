@@ -104,36 +104,43 @@ poster.post("/", async (req: any, res: any) => {
           },
         });
 
-        const imageCol: imageCollection[] = req.body.poster.image;
-        imageCol.forEach(async (image) => {
-          const createImage = await prisma.image.create({
-            data: {
-              Poster: { connect: { posterId: createPoster?.posterId } },
-              image: image.image,
-              priority: image.priority,
-            },
-          });
+        let imageCol = req.body.poster.image;
+        imageCol.forEach((e: any) => {
+          e.posterId = createPoster.posterId;
+        });
+        await prisma.image.createMany({
+          data: imageCol,
         });
 
+        const display: any[] = [];
         const schedules: Schedule[] = req.body.display;
         schedules.forEach((schedule) => {
           schedule.time.forEach((time) => {
             schedule.MACaddress.forEach(async (mac) => {
-              const createDisplay = await prisma.display.createMany({
-                data: {
-                  MACaddress: mac,
-                  posterId: createPoster?.posterId,
-                  startDate: new Date(schedule.startDate),
-                  endDate: new Date(schedule.endDate),
-                  startTime: new Date(time.startTime),
-                  endTime: new Date(time.endTime),
-                  duration: schedule.duration,
-                },
+              display.push({
+                MACaddress: mac,
+                posterId: createPoster.posterId,
+                startDate: new Date(schedule.startDate),
+                endDate: new Date(schedule.endDate),
+                startTime: new Date(time.startTime),
+                endTime: new Date(time.endTime),
+                duration: schedule.duration,
               });
             });
           });
         });
-        return res.send({ ok: true, createPoster });
+        await prisma.display.createMany({ data: display });
+
+        const newPoster = display.map((e: any) => {
+          return {
+            ...e,
+            ...createPoster,
+            image: imageCol,
+          };
+        });
+
+        io.emit("addPoster", newPoster);
+        return res.send({ ok: true, newPoster });
       } else {
         return res.status(400).send({
           ok: false,
@@ -168,72 +175,77 @@ poster.post("/", async (req: any, res: any) => {
 // PUT /poster : edit poster and schedule
 poster.put("/", async (req: any, res: any) => {
   try {
-    try {
-      const editPoster = await prisma.poster.update({
-        where: {
-          posterId: req.query.posterId,
-        },
-        data: {
-          title: req.body.poster.title,
-          description: req.body.poster.description,
-        },
-      });
+    const editPoster = await prisma.poster.update({
+      where: {
+        posterId: req.query.posterId,
+      },
+      data: {
+        title: req.body.poster.title,
+        description: req.body.poster.description,
+      },
+    });
 
-      const imageCol: imageCollection[] = req.body.poster.image;
-      imageCol.forEach(async (image) => {
-        const editImage = await prisma.image.updateMany({
-          where: {
+    await prisma.image.deleteMany({
+      where: {
+        posterId: req.query.posterId,
+      },
+    });
+    let imageCol = req.body.poster.image;
+    imageCol.forEach((e: any) => {
+      e.posterId = req.query.posterId;
+    });
+    await prisma.image.createMany({
+      data: imageCol,
+    });
+
+    await prisma.display.deleteMany({
+      where: {
+        posterId: req.query.posterId,
+      },
+    });
+    const schedules: Schedule[] = req.body.display;
+    const display: any[] = [];
+    schedules.forEach(async (schedule) => {
+      schedule.time.forEach(async (time) => {
+        schedule.MACaddress.forEach(async (mac) => {
+          display.push({
+            MACaddress: mac,
             posterId: req.query.posterId,
-            priority: image.priority,
-          },
-          data: {
-            image: image.image,
-          },
-        });
-      });
-
-      const deletedDisplay = await prisma.display.deleteMany({
-        where: {
-          posterId: req.query.posterId,
-        },
-      });
-      const schedules: Schedule[] = req.body.display;
-      schedules.forEach((schedule) => {
-        schedule.time.forEach((time) => {
-          schedule.MACaddress.forEach(async (mac) => {
-            const createDisplay = await prisma.display.createMany({
-              data: {
-                MACaddress: mac,
-                posterId: req.query.posterId,
-                startDate: new Date(schedule.startDate),
-                endDate: new Date(schedule.endDate),
-                startTime: new Date(time.startTime),
-                endTime: new Date(time.endTime),
-                duration: schedule.duration,
-              },
-            });
+            startDate: new Date(schedule.startDate),
+            endDate: new Date(schedule.endDate),
+            startTime: new Date(time.startTime),
+            endTime: new Date(time.endTime),
+            duration: schedule.duration,
           });
         });
       });
+    });
+    await prisma.display.createMany({ data: display });
 
-      // io.emit("updatePoster", );
-      return res.send({ ok: true, editPoster });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2002") {
-          return res.status(400).send({
-            ok: false,
-            message: "new poster name is already used.",
-          });
-        } else if (err.code === "P2025") {
-          return res.status(400).send({
-            ok: false,
-            message: "Record to edit poster not found.",
-          });
-        }
+    const updatePoster = display.map((e) => {
+      return {
+        ...e,
+        ...editPoster,
+        image: imageCol,
+      };
+    });
+
+    io.emit("updatePoster", updatePoster);
+    return res.send({ ok: true, updatePoster });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        return res.status(400).send({
+          ok: false,
+          message: "new poster name is already used.",
+        });
+      } else if (err.code === "P2025") {
+        return res.status(400).send({
+          ok: false,
+          message: "Record to edit poster not found.",
+        });
       }
     }
-  } catch (err) {
     return res
       .status(500)
       .send({ ok: false, message: "Internal Server Error" });
@@ -324,6 +336,7 @@ poster.put("/emergency", async (req: any, res: any) => {
           incidentName: req.body.incidentName,
           emergencyImage: req.body.emergencyImage,
           description: req.body.description,
+          status: req.body.status ? true : false,
         },
       });
       io.emit("updateEmergency", req.query.incidentName, emergency);

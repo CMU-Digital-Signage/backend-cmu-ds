@@ -13,6 +13,7 @@ model User {
   lastName  String?  @db.VarChar(255)
   email     String   @unique(map: "email") @db.VarChar(255)
   isAdmin   Boolean  @default(false)
+  password  String?  @db.VarChar(255)
   Poster    Poster[]
 
   @@unique([firstName, lastName], map: "User_UN")

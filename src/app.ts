@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import { routes } from "./api";
 import { Socket } from "socket.io";
+import mqtt from "mqtt";
 
 const socket = require("socket.io");
 dotenv.config();
@@ -34,7 +35,7 @@ const server = app.listen(port, () =>
 const io = socket(server, {
   cors: { origin: "*" },
   transports: ["polling", "websocket"],
-});
+}).of("/api/v1");
 
 io.on("connection", (socket: Socket) => {
   // console.log("user is connected");
@@ -42,5 +43,31 @@ io.on("connection", (socket: Socket) => {
     // console.log(`socket ${socket.id} disconnected`);
   });
 });
+
+const mqttClient = mqtt.connect({
+  host: "d887ebbbf00045b6b1405a5f76f66686.s1.eu.hivemq.cloud",
+  port: 8883,
+  protocol: "mqtts",
+  username: "cpe_ds",
+  password: "CPEds261361",
+});
+
+mqttClient.on("connect", () => {
+  console.log("connected.");
+});
+
+mqttClient.on("error", (error) => {
+  console.log(error);
+});
+
+mqttClient.on("message", (topic, message) => {
+  console.log(topic, message.toString());
+  mqttClient.end();
+});
+
+mqttClient.subscribe("pi/on_off");
+// mqttClient.publish("pi/on_off", "on");
+
+export { mqttClient };
 
 export { io };

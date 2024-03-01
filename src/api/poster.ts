@@ -56,57 +56,76 @@ poster.get("/", async (req: any, res: any) => {
 // POST /poster : add poster with schedules
 poster.post("/", async (req: any, res: any) => {
   try {
-    const posterName = await prisma.poster.findUnique({
-      where: {
-        title: req.body.poster.title,
-      },
-    });
-    if (posterName == null) {
-      const user = await prisma.user.findUnique({
-        where: { email: req.auth.email },
-      });
-      const createPoster = await prisma.poster.create({
-        data: {
+    try {
+      const posterName = await prisma.poster.findUnique({
+        where: {
           title: req.body.poster.title,
-          description: req.body.poster.description,
-          User: { connect: { id: user?.id } },
         },
       });
-
-      const imageCol: imageCollection[] = req.body.poster.image;
-      imageCol.forEach(async (image) => {
-        const createImage = await prisma.image.create({
+      if (posterName == null) {
+        const user = await prisma.user.findUnique({
+          where: { email: req.auth.email },
+        });
+        const createPoster = await prisma.poster.create({
           data: {
-            Poster: { connect: { posterId: createPoster?.posterId } },
-            image: image.image,
-            priority: image.priority,
+            title: req.body.poster.title,
+            description: req.body.poster.description,
+            User: { connect: { id: user?.id } },
           },
         });
-      });
 
-      const schedules: Schedule[] = req.body.display;
-      schedules.forEach((schedule) => {
-        schedule.time.forEach((time) => {
-          schedule.MACaddress.forEach(async (mac) => {
-            const createDisplay = await prisma.display.createMany({
-              data: {
-                MACaddress: mac,
-                posterId: createPoster?.posterId,
-                startDate: new Date(schedule.startDate),
-                endDate: new Date(schedule.endDate),
-                startTime: new Date(time.startTime),
-                endTime: new Date(time.endTime),
-                duration: schedule.duration,
-              },
+        const imageCol: imageCollection[] = req.body.poster.image;
+        imageCol.forEach(async (image) => {
+          const createImage = await prisma.image.create({
+            data: {
+              Poster: { connect: { posterId: createPoster?.posterId } },
+              image: image.image,
+              priority: image.priority,
+            },
+          });
+        });
+
+        const schedules: Schedule[] = req.body.display;
+        schedules.forEach((schedule) => {
+          schedule.time.forEach((time) => {
+            schedule.MACaddress.forEach(async (mac) => {
+              const createDisplay = await prisma.display.createMany({
+                data: {
+                  MACaddress: mac,
+                  posterId: createPoster?.posterId,
+                  startDate: new Date(schedule.startDate),
+                  endDate: new Date(schedule.endDate),
+                  startTime: new Date(time.startTime),
+                  endTime: new Date(time.endTime),
+                  duration: schedule.duration,
+                },
+              });
             });
           });
         });
-      });
-      return res.send({ ok: true, createPoster });
-    } else {
+        return res.send({ ok: true, createPoster });
+      } else {
+        return res.status(400).send({
+          ok: false,
+          message: "title is duplicated!",
+        });
+      }
+    } catch (err) {
+      const posterName = await prisma.poster.findUnique({
+        where: {
+          title: req.body.poster.title,
+        }
+      })
+      if(posterName != null){
+        const deletePoster = await prisma.poster.delete({
+          where: {
+            posterId: posterName.posterId,
+          }
+        })
+      }
       return res.status(400).send({
         ok: false,
-        message: "title is duplicated!",
+        message: "something went wrong!",
       });
     }
   } catch (err) {

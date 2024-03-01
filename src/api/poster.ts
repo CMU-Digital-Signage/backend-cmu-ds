@@ -151,14 +151,14 @@ poster.post("/", async (req: any, res: any) => {
       const posterName = await prisma.poster.findUnique({
         where: {
           title: req.body.poster.title,
-        }
-      })
-      if(posterName != null){
+        },
+      });
+      if (posterName != null) {
         const deletePoster = await prisma.poster.delete({
           where: {
             posterId: posterName.posterId,
-          }
-        })
+          },
+        });
       }
       return res.status(400).send({
         ok: false,
@@ -328,6 +328,37 @@ poster.post("/emergency", async (req: any, res: any) => {
 poster.put("/emergency", async (req: any, res: any) => {
   try {
     try {
+      if (req.query.incidentName === "banner") {
+        const user = await prisma.user.findMany();
+        let emergency;
+        const password = req.body.password;
+        let pass = false;
+        for (const e of user) {
+          if (e.password?.length) {
+            const match = await bcrypt.compare(password, e.password);
+            if (match) {
+              const emergency = await prisma.emergency.update({
+                where: {
+                  incidentName: req.query.incidentName,
+
+                  status: true,
+                },
+                data: {
+                  status: true,
+                },
+              });
+              io.emit("activate", emergency);
+              pass = match;
+              break;
+            }
+          }
+        }
+        if (pass) return res.send({ ok: true, emergency });
+        else
+          return res
+            .status(400)
+            .send({ ok: false, message: "Password incorrect." });
+      }
       const emergency = await prisma.emergency.update({
         where: {
           incidentName: req.query.incidentName,
@@ -336,7 +367,6 @@ poster.put("/emergency", async (req: any, res: any) => {
           incidentName: req.body.incidentName,
           emergencyImage: req.body.emergencyImage,
           description: req.body.description,
-          status: req.body.status ? true : false,
         },
       });
       io.emit("updateEmergency", req.query.incidentName, emergency);
@@ -468,16 +498,47 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
 poster.delete("/emergency/activate", async (req: any, res: any) => {
   try {
     try {
-      const emergency = await prisma.emergency.update({
-        where: {
-          incidentName: req.query.incidentName,
-        },
-        data: {
-          status: false,
-        },
-      });
-      io.emit("deactivate", emergency);
-      return res.send({ ok: true, emergency });
+      const user = await prisma.user.findMany();
+      let emergency;
+      const password = req.body.password;
+      let pass = false;
+
+      for (const e of user) {
+        if (e.password?.length) {
+          const match = await bcrypt.compare(password, e.password);
+          if (match) {
+            if (req.query.incidentName === "banner") {
+              emergency = await prisma.emergency.update({
+                where: {
+                  incidentName: req.query.incidentName,
+                },
+                data: {
+                  emergencyImage: undefined,
+                  status: false,
+                },
+              });
+            } else {
+              emergency = await prisma.emergency.update({
+                where: {
+                  incidentName: req.query.incidentName,
+                },
+                data: {
+                  status: false,
+                },
+              });
+            }
+
+            io.emit("activate", emergency);
+            pass = match;
+            break;
+          }
+        }
+      }
+      if (pass) return res.send({ ok: true, emergency });
+      else
+        return res
+          .status(400)
+          .send({ ok: false, message: "Password incorrect." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === "P2025") {

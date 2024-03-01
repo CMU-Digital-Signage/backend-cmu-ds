@@ -86,64 +86,83 @@ poster.get("/", async (req: any, res: any) => {
 // POST /poster : add poster with schedules
 poster.post("/", async (req: any, res: any) => {
   try {
-    const posterName = await prisma.poster.findUnique({
-      where: {
-        title: req.body.poster.title,
-      },
-    });
-    if (posterName == null) {
-      const user = await prisma.user.findUnique({
-        where: { email: req.auth.email },
-      });
-      const createPoster = await prisma.poster.create({
-        data: {
+    try {
+      const posterName = await prisma.poster.findUnique({
+        where: {
           title: req.body.poster.title,
-          description: req.body.poster.description,
-          User: { connect: { id: user?.id } },
         },
       });
+      if (posterName == null) {
+        const user = await prisma.user.findUnique({
+          where: { email: req.auth.email },
+        });
+        const createPoster = await prisma.poster.create({
+          data: {
+            title: req.body.poster.title,
+            description: req.body.poster.description,
+            User: { connect: { id: user?.id } },
+          },
+        });
 
-      let imageCol = req.body.poster.image;
-      imageCol.forEach((e: any) => {
-        e.posterId = createPoster.posterId;
-      });
-      await prisma.image.createMany({
-        data: imageCol,
-      });
+        let imageCol = req.body.poster.image;
+        imageCol.forEach((e: any) => {
+          e.posterId = createPoster.posterId;
+        });
+        await prisma.image.createMany({
+          data: imageCol,
+        });
 
-      const display: any[] = [];
-      const schedules: Schedule[] = req.body.display;
-      schedules.forEach((schedule) => {
-        schedule.time.forEach((time) => {
-          schedule.MACaddress.forEach(async (mac) => {
-            display.push({
-              MACaddress: mac,
-              posterId: createPoster.posterId,
-              startDate: new Date(schedule.startDate),
-              endDate: new Date(schedule.endDate),
-              startTime: new Date(time.startTime),
-              endTime: new Date(time.endTime),
-              duration: schedule.duration,
+        const display: any[] = [];
+        const schedules: Schedule[] = req.body.display;
+        schedules.forEach((schedule) => {
+          schedule.time.forEach((time) => {
+            schedule.MACaddress.forEach(async (mac) => {
+              display.push({
+                MACaddress: mac,
+                posterId: createPoster.posterId,
+                startDate: new Date(schedule.startDate),
+                endDate: new Date(schedule.endDate),
+                startTime: new Date(time.startTime),
+                endTime: new Date(time.endTime),
+                duration: schedule.duration,
+              });
             });
           });
         });
-      });
-      await prisma.display.createMany({ data: display });
+        await prisma.display.createMany({ data: display });
 
-      const newPoster = display.map((e: any) => {
-        return {
-          ...e,
-          ...createPoster,
-          image: imageCol,
-        };
-      });
+        const newPoster = display.map((e: any) => {
+          return {
+            ...e,
+            ...createPoster,
+            image: imageCol,
+          };
+        });
 
-      io.emit("addPoster", newPoster);
-      return res.send({ ok: true, newPoster });
-    } else {
+        io.emit("addPoster", newPoster);
+        return res.send({ ok: true, newPoster });
+      } else {
+        return res.status(400).send({
+          ok: false,
+          message: "title is duplicated!",
+        });
+      }
+    } catch (err) {
+      const posterName = await prisma.poster.findUnique({
+        where: {
+          title: req.body.poster.title,
+        }
+      })
+      if(posterName != null){
+        const deletePoster = await prisma.poster.delete({
+          where: {
+            posterId: posterName.posterId,
+          }
+        })
+      }
       return res.status(400).send({
         ok: false,
-        message: "title is duplicated!",
+        message: "something went wrong!",
       });
     }
   } catch (err) {

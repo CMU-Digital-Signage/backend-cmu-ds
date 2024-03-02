@@ -337,15 +337,11 @@ poster.put("/emergency", async (req: any, res: any) => {
           if (e.password?.length) {
             const match = await bcrypt.compare(password, e.password);
             if (match) {
-              const emergency = await prisma.emergency.update({
+              emergency = await prisma.emergency.update({
                 where: {
                   incidentName: req.query.incidentName,
-
-                  status: true,
                 },
-                data: {
-                  status: true,
-                },
+                data: { emergencyImage: req.body.emergencyImage, status: true },
               });
               io.emit("activate", emergency);
               pass = match;
@@ -494,8 +490,8 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
   }
 });
 
-// DELETE /poster/emergency/activate : change status of emergency poster to inactivate
-poster.delete("/emergency/activate", async (req: any, res: any) => {
+// POST /poster/emergency/deactivate : change status of emergency poster to inactivate
+poster.post("/emergency/deactivate", async (req: any, res: any) => {
   try {
     try {
       const user = await prisma.user.findMany();
@@ -513,7 +509,7 @@ poster.delete("/emergency/activate", async (req: any, res: any) => {
                   incidentName: req.query.incidentName,
                 },
                 data: {
-                  emergencyImage: undefined,
+                  emergencyImage: "",
                   status: false,
                 },
               });
@@ -528,7 +524,7 @@ poster.delete("/emergency/activate", async (req: any, res: any) => {
               });
             }
 
-            io.emit("activate", emergency);
+            io.emit("deactivate", emergency);
             pass = match;
             break;
           }

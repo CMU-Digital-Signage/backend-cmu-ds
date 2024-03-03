@@ -44,36 +44,28 @@ poster.get("/", async (req: any, res: any) => {
   try {
     const data: any =
       await prisma.$queryRaw`SELECT posterId, id, title, description, createdAt,
-                              priority, image, MACaddress, startDate, endDate, startTime, endTime, duration
-                              FROM Poster NATURAL JOIN Image NATURAL JOIN Display`;
-
+                              MACaddress, startDate, endDate, startTime, endTime, duration
+                              FROM Poster NATURAL JOIN Display`;
+    const image: any = await prisma.image.findMany();
     let poster = [] as any;
-    data.forEach((e: any) => {
-      const imgCol = data.filter((p: any) => p.title === e.title);
-      let image = [] as imageCollection[];
-      imgCol.forEach((p: any) => {
-        if (!image.find((e) => e.priority === p.priority)) {
-          image.push({ image: p.image, priority: p.priority });
-        }
-      });
-      if (
-        !poster.find(
+    await Promise.all(
+      data.map(async (e: any) => {
+        const existingPoster = poster.find(
           (p: any) =>
             p.MACaddress === e.MACaddress &&
             p.title === e.title &&
-            p.startDate.toDateString() === e.startDate.toDateString() &&
-            p.endDate.toDateString() === e.endDate.toDateString() &&
-            p.startTime.toTimeString() === e.startTime.toTimeString() &&
-            p.endTime.toTimeString() === e.endTime.toTimeString()
-        )
-      ) {
-        const { priority, ...rest } = e;
-        poster.push({
-          ...rest,
-          image: image,
-        });
-      }
-    });
+            p.startDate.getTime() === e.startDate.getTime() &&
+            p.endDate.getTime() === e.endDate.getTime() &&
+            p.startTime.getTime() === e.startTime.getTime() &&
+            p.endTime.getTime() === e.endTime.getTime()
+        );
+
+        if (!existingPoster) {
+          const imgCol = image.filter((i: any) => i.posterId === e.posterId);
+          poster.push({ ...e, image: [...imgCol] });
+        }
+      })
+    );
 
     return res.send({ ok: true, poster });
   } catch (err) {

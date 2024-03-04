@@ -40,7 +40,7 @@ email.post("/", async (req: any, res: Response) => {
 
     const sendMail = async () => {
       const mailOptions = {
-        from: "CPE Digital Signage <noreply>",
+        from: "pixelParade <noreply>",
         to: email,
         subject: "Reset Emergency Password",
         attachments: [
@@ -75,7 +75,7 @@ email.post("/", async (req: any, res: Response) => {
                     </tbody>
                   </table>
                   <h1 class="" style="color:rgb(0,0,0);font-size:24px;font-weight:400;text-align:center;padding:0px;margin-top:30px;margin-bottom:30px;margin-left:0px;margin-right:0px"> 
-                  <strong>CPE Digital Signage</strong>
+                  <strong>pixelParade</strong>
                   <br/>
                   <strong>Emergency Password Reset</strong>
                   <p style="font-size:14px;line-height:24px;margin:16px 0;color:rgb(0,0,0)">Hello, ${req.auth.firstName} ${req.auth.lastName}</p>

@@ -3,6 +3,11 @@ import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { io } from "../app";
+import { mqttClient } from "../utils/config";
+
+mqttClient.on("connect", () => {
+  // console.log("connected.");
+});
 
 export const poster = Router();
 
@@ -405,37 +410,6 @@ poster.delete("/emergency", async (req: any, res: any) => {
   }
 });
 
-// PUT /poster/emergency/activate : change status of emergency poster to activate
-poster.put("/emergency/activate", async (req: any, res: any) => {
-  try {
-    try {
-      const emergency = await prisma.emergency.update({
-        where: {
-          incidentName: req.query.incidentName,
-        },
-        data: {
-          status: true,
-        },
-      });
-
-      return res.send({ ok: true, emergency });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2025") {
-          return res.status(400).send({
-            ok: false,
-            message: "Record to edit emergency poster not found.",
-          });
-        }
-      }
-    }
-  } catch (err) {
-    return res
-      .status(500)
-      .send({ ok: false, message: "Internal Server Error", err });
-  }
-});
-
 // POST /poster/emergency/activate : change status of emergency poster to activate
 poster.post("/emergency/activate", async (req: any, res: any) => {
   try {
@@ -462,7 +436,10 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
         }
       }
     }
-    if (pass) return res.send({ ok: true, emergency });
+    if (pass) {
+      mqttClient.publish("pi/on_off", "EMGC");
+      return res.send({ ok: true, emergency });
+    }
     else
       return res
         .status(400)
@@ -522,7 +499,10 @@ poster.post("/emergency/deactivate", async (req: any, res: any) => {
           }
         }
       }
-      if (pass) return res.send({ ok: true, emergency });
+      if (pass) {
+        mqttClient.publish("pi/on_off", "Not EMGC");
+        return res.send({ ok: true, emergency });
+      }
       else
         return res
           .status(400)

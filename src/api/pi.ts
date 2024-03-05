@@ -2,15 +2,7 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
-import mqtt from "mqtt";
-
-const mqttClient = mqtt.connect({
-  host: "d887ebbbf00045b6b1405a5f76f66686.s1.eu.hivemq.cloud",
-  port: 8883,
-  protocol: "mqtts",
-  username: "cpe_ds",
-  password: "CPEds261361",
-});
+import { mqttClient } from "../utils/config";
 
 mqttClient.on("connect", () => {
   // console.log("connected.");
@@ -107,17 +99,9 @@ pi.get("/poster", async (req: any, res: any) => {
   }
 });
 
-pi.post("/on", async (req: any, res: any) => {
+pi.post("/on_off", async (req: any, res: any) => {
   try {
-    mqttClient.publish("pi/on_off", req.query.mac + "/on");
-    await prisma.device.update({
-      where: {
-        MACaddress: req.query.mac,
-      },
-      data: {
-        status: true,
-      },
-    });
+    mqttClient.publish("pi/on_off", req.query.mac);
     io.emit("turnOnDevice", req.query.mac);
     return res.send({ ok: true });
   } catch (err) {
@@ -127,19 +111,18 @@ pi.post("/on", async (req: any, res: any) => {
   }
 });
 
-pi.post("/off", async (req: any, res: any) => {
+pi.post("/status", async (req: any, res: any) => {
   try {
-    mqttClient.publish("pi/on_off", req.query.mac + "/off");
-    await prisma.device.update({
+    const deviceStatus = await prisma.device.update({
       where: {
         MACaddress: req.query.mac,
       },
       data: {
-        status: false,
+        status: req.query.status,
       },
     });
     io.emit("turnOffDevice", req.query.mac);
-    return res.send({ ok: true });
+    return res.send({ ok: true, deviceStatus });
   } catch (err) {
     return res
       .status(500)

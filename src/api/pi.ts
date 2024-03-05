@@ -51,13 +51,15 @@ pi.post("/", async (req: any, res: any) => {
 
 pi.get("/poster", async (req: any, res: any) => {
   try {
-    const date = new Date(new Date().setUTCHours(0, 0, 0, 0));
+    const date = new Date();
+    date.setHours(date.getHours() + 7);
+    date.setUTCHours(0, 0, 0, 0);
 
     const data: any = await prisma.$queryRaw`
       SELECT title, priority, image, startDate, endDate, startTime, endTime, duration, createdAt
       FROM Display NATURAL JOIN Poster NATURAL JOIN Image
       WHERE MACaddress = ${req.query.mac}
-      AND startDate <= ${date} AND endDate >= ${date}
+      AND startDate <= ${date} AND ${date} <= endDate 
       `;
 
     let poster = [] as any;
@@ -88,7 +90,16 @@ pi.get("/poster", async (req: any, res: any) => {
       }
     });
 
-    return res.send({ ok: true, poster });
+    const floor = await prisma.device
+      .findUnique({
+        select: { room: true },
+        where: { MACaddress: req.query.mac },
+      })
+      .then((e) => {
+        return e?.room?.charAt(0);
+      });
+
+    return res.send({ ok: true, floor, poster });
   } catch (err) {
     return res
       .status(500)

@@ -121,7 +121,7 @@ pi.post("/status", async (req: any, res: any) => {
         status: req.query.status,
       },
     });
-    io.emit("turnOffDevice", req.query.mac);
+    io.emit("turnOnOffDevice", deviceStatus);
     return res.send({ ok: true, deviceStatus });
   } catch (err) {
     return res

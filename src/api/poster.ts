@@ -456,6 +456,7 @@ poster.put("/emergency", async (req: any, res: any) => {
           }
         }
         if (pass) {
+          mqttClient.publish("pi/on_off", "EMGC");
           return res.send({
             ok: true,
             message: `${req.query.incidentName} has been Activate.`,

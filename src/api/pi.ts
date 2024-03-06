@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
-import { mqttClient } from "../utils/config";
+import { bucketName, minioClient, mqttClient } from "../utils/config";
 
 mqttClient.on("connect", () => {
   // console.log("connected.");
@@ -55,14 +55,22 @@ pi.get("/poster", async (req: any, res: any) => {
       `;
 
     let poster = [] as any;
-    data.forEach((e: any) => {
+    data.forEach(async (e: any) => {
       const imgCol = data.filter((p: any) => p.title === e.title);
       let image: any[] = [];
-      imgCol.forEach((p: any) => {
-        if (!image.find((e) => e.priority === p.priority)) {
-          image.push({ image: p.image, priority: p.priority });
-        }
+      const promises = imgCol.map(async (p: any) => {
+        try {
+          if (!image.find((e) => e.priority === p.priority)) {
+            const url = await minioClient.presignedGetObject(
+              bucketName,
+              p.image
+            );
+            image.push({ image: url, priority: p.priority });
+          }
+        } catch (err) {}
       });
+      await Promise.all(promises);
+
       if (
         !poster.find(
           (p: any) =>
@@ -137,6 +145,17 @@ pi.get("/poster/emergency", async (req: any, res: any) => {
         status: true,
       },
     });
+    const promises = emergency.map(async (e) => {
+      if (e.incidentName !== "banner") {
+        const url = await minioClient.presignedGetObject(
+          bucketName,
+          e.emergencyImage
+        );
+        e.emergencyImage = url;
+      }
+    });
+    await Promise.all(promises);
+
     return res.send({ ok: true, emergency });
   } catch (err) {
     return res

@@ -23,7 +23,7 @@ model Device {
   MACaddress  String    @id @db.VarChar(255)
   deviceName  String?   @unique(map: "deviceName") @db.VarChar(255)
   room        String?   @db.VarChar(255)
-  location    String?   @db.LongText
+  location    String?   @db.VarChar(255)
   description String?   @db.VarChar(255)
   status      Boolean   @default(false)
   Display     Display[]
@@ -62,7 +62,7 @@ model Display {
 
 model Emergency {
   incidentName   String  @id @db.VarChar(255)
-  emergencyImage String  @db.LongText
+  emergencyImage String  @db.VarChar(255)
   description    String? @db.VarChar(255)
   status         Boolean @default(false)
 }
@@ -70,7 +70,7 @@ model Emergency {
 model Image {
   posterId String @db.VarChar(255)
   priority Int
-  image    String @db.LongText
+  image    String @db.VarChar(255)
   Poster   Poster @relation(fields: [posterId], references: [posterId], onDelete: Cascade, map: "Image_Poster_FK")
 
   @@id([posterId, priority])

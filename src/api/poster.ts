@@ -1,9 +1,16 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
-import { Prisma } from "@prisma/client";
+import { Image, Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { io } from "../app";
-import { mqttClient } from "../utils/config";
+import {
+  bucketName,
+  folderEmer,
+  folderPoster,
+  minioClient,
+  mqttClient,
+  uploadFile,
+} from "../utils/config";
 
 mqttClient.on("connect", () => {
   // console.log("connected.");
@@ -11,7 +18,6 @@ mqttClient.on("connect", () => {
 
 export const poster = Router();
 
-const saltRounds = 10;
 type Schedule = {
   startDate: string;
   endDate: string;
@@ -51,7 +57,7 @@ poster.get("/", async (req: any, res: any) => {
       await prisma.$queryRaw`SELECT posterId, id, title, description, createdAt,
                               MACaddress, startDate, endDate, startTime, endTime, duration
                               FROM Poster NATURAL JOIN Display`;
-    const image: any = await prisma.image.findMany();
+    const imgCol: any = await prisma.image.findMany();
     let poster = [] as any;
     await Promise.all(
       data.map(async (e: any) => {
@@ -66,8 +72,18 @@ poster.get("/", async (req: any, res: any) => {
         );
 
         if (!existingPoster) {
-          const imgCol = image.filter((i: any) => i.posterId === e.posterId);
-          poster.push({ ...e, image: [...imgCol] });
+          let image = imgCol.filter((i: any) => i.posterId === e.posterId);
+          const promises = image.map(async (img: any) => {
+            try {
+              const url = await minioClient.presignedGetObject(
+                bucketName,
+                img.image
+              );
+              img.image = url;
+            } catch (err) {}
+          });
+          await Promise.all(promises);
+          poster.push({ ...e, image: [...image] });
         }
       })
     );
@@ -101,12 +117,21 @@ poster.post("/", async (req: any, res: any) => {
           },
         });
 
-        let imageCol = req.body.poster.image;
-        imageCol.forEach((e: any) => {
-          e.posterId = createPoster.posterId;
+        const imageCol = req.body.poster.image;
+        let image: Image[] = [];
+        const promises1 = imageCol.map(async (e: any) => {
+          const file = e.image;
+          const path = `${folderPoster}/${file.name}`;
+          uploadFile(file, path);
+          image.push({
+            posterId: createPoster.posterId,
+            priority: e.priority,
+            image: path,
+          });
         });
+        await Promise.all(promises1);
         await prisma.image.createMany({
-          data: imageCol,
+          data: image,
         });
 
         const display: any[] = [];
@@ -128,11 +153,22 @@ poster.post("/", async (req: any, res: any) => {
         });
         await prisma.display.createMany({ data: display });
 
+        const promises2 = image.map(async (e) => {
+          try {
+            const url = await minioClient.presignedGetObject(
+              bucketName,
+              e.image
+            );
+            e.image = url;
+          } catch (err) {}
+        });
+        await Promise.all(promises2);
+
         const newPoster = display.map((e: any) => {
           return {
             ...e,
             ...createPoster,
-            image: imageCol,
+            image: [...image],
           };
         });
 
@@ -172,6 +208,15 @@ poster.post("/", async (req: any, res: any) => {
 // PUT /poster : edit poster and schedule
 poster.put("/", async (req: any, res: any) => {
   try {
+    const oldTitle = await prisma.poster.findUnique({
+      where: {
+        posterId: req.query.posterId,
+      },
+      include: {
+        Image: true,
+      },
+    });
+
     const editPoster = await prisma.poster.update({
       where: {
         posterId: req.query.posterId,
@@ -182,17 +227,34 @@ poster.put("/", async (req: any, res: any) => {
       },
     });
 
+    if (oldTitle) {
+      const promises = oldTitle?.Image.map(async (e) => {
+        try {
+          await minioClient.removeObject(bucketName, e.image);
+        } catch (err) {}
+      });
+      await Promise.all(promises);
+    }
     await prisma.image.deleteMany({
       where: {
         posterId: req.query.posterId,
       },
     });
-    let imageCol = req.body.poster.image;
-    imageCol.forEach((e: any) => {
-      e.posterId = req.query.posterId;
+    const imageCol = req.body.poster.image;
+    let image: Image[] = [];
+    const promises1 = imageCol.map(async (e: any) => {
+      const file = e.image;
+      const path = `${folderPoster}/${file.name}`;
+      uploadFile(file, path);
+      image.push({
+        posterId: req.query.posterId,
+        priority: e.priority,
+        image: path,
+      });
     });
+    await Promise.all(promises1);
     await prisma.image.createMany({
-      data: imageCol,
+      data: image,
     });
 
     await prisma.display.deleteMany({
@@ -219,11 +281,19 @@ poster.put("/", async (req: any, res: any) => {
     });
     await prisma.display.createMany({ data: display });
 
+    const promises = image.map(async (e) => {
+      try {
+        const url = await minioClient.presignedGetObject(bucketName, e.image);
+        e.image = url;
+      } catch (err) {}
+    });
+    await Promise.all(promises);
+
     const updatePoster = display.map((e) => {
       return {
         ...e,
         ...editPoster,
-        image: imageCol,
+        image: [...image],
       };
     });
 
@@ -253,11 +323,21 @@ poster.put("/", async (req: any, res: any) => {
 poster.delete("/", async (req: any, res: any) => {
   try {
     try {
-      const deletePoster = await prisma.poster.delete({
-        where: {
-          posterId: req.query.posterId,
-        },
+      const image = await prisma.image.findMany({
+        where: { posterId: req.query.posterId },
       });
+      const deletePoster = await prisma.poster.delete({
+        where: { posterId: req.query.posterId },
+      });
+
+      const promises = image.map(async (e) => {
+        try {
+          await minioClient.removeObject(bucketName, e.image);
+        } catch (err) {}
+      });
+
+      await Promise.all(promises);
+
       io.emit("deletePoster", deletePoster);
       return res.send({ ok: true, deletePoster });
     } catch (err) {
@@ -278,6 +358,19 @@ poster.delete("/", async (req: any, res: any) => {
 poster.get("/emergency", async (req: any, res: any) => {
   try {
     const emergency = await prisma.emergency.findMany();
+    const promises = emergency.map(async (e) => {
+      if (e.incidentName !== "banner") {
+        try {
+          const url = await minioClient.presignedGetObject(
+            bucketName,
+            e.emergencyImage
+          );
+          e.emergencyImage = url;
+        } catch (err) {}
+      }
+    });
+    await Promise.all(promises);
+
     return res.send({ ok: true, emergency });
   } catch (err) {
     return res
@@ -298,14 +391,25 @@ poster.post("/emergency", async (req: any, res: any) => {
       },
     });
     if (emer == null) {
+      const file = req.body.emergencyImage;
+      const path = `${folderEmer}/${file.name}`;
+      uploadFile(file, path);
+
       const emergency = await prisma.emergency.create({
         data: {
           incidentName: req.body.incidentName,
-          emergencyImage: req.body.emergencyImage,
+          emergencyImage: path,
           description: req.body.description,
           status: req.body.status ? true : false,
         },
       });
+
+      const url = await minioClient.presignedGetObject(
+        bucketName,
+        emergency.emergencyImage
+      );
+      emergency.emergencyImage = url;
+
       io.emit("addEmergency", emergency);
       return res.send({ ok: true, emergency });
     } else {
@@ -352,16 +456,40 @@ poster.put("/emergency", async (req: any, res: any) => {
             .status(400)
             .send({ ok: false, message: "Password incorrect." });
       }
+
+      if (req.req.query.incidentName !== req.body.incidentName) {
+        const oldName = await prisma.emergency.findUnique({
+          where: {
+            incidentName: req.query.incidentName,
+          },
+        });
+        if (!oldName) {
+          return res.status(404).send({ error: "Emergency not found" });
+        }
+        await minioClient.removeObject(bucketName, `${oldName.emergencyImage}`);
+      }
+
+      const file = req.body.emergencyImage;
+      const path = `${folderEmer}/${file.name}`;
+      uploadFile(file, path);
+
       const emergency = await prisma.emergency.update({
         where: {
           incidentName: req.query.incidentName,
         },
         data: {
           incidentName: req.body.incidentName,
-          emergencyImage: req.body.emergencyImage,
+          emergencyImage: path,
           description: req.body.description,
         },
       });
+
+      const url = await minioClient.presignedGetObject(
+        bucketName,
+        emergency.emergencyImage
+      );
+      emergency.emergencyImage = url;
+
       io.emit("updateEmergency", req.query.incidentName, emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
@@ -395,6 +523,10 @@ poster.delete("/emergency", async (req: any, res: any) => {
           incidentName: req.query.incidentName,
         },
       });
+      (async () => {
+        await minioClient.removeObject(bucketName, emergency.emergencyImage);
+      })();
+
       io.emit("deleteEmergency", emergency);
       return res.send({ ok: true, emergency });
     } catch (err) {
@@ -430,7 +562,7 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
               status: true,
             },
           });
-          io.emit("activate", emergency);
+          io.emit("activate", req.query.incidentName);
           pass = match;
           break;
         }
@@ -438,9 +570,11 @@ poster.post("/emergency/activate", async (req: any, res: any) => {
     }
     if (pass) {
       mqttClient.publish("pi/on_off", "EMGC");
-      return res.send({ ok: true, emergency });
-    }
-    else
+      return res.send({
+        ok: true,
+        message: `${req.query.incidentName} has been Activate.`,
+      });
+    } else
       return res
         .status(400)
         .send({ ok: false, message: "Password incorrect." });
@@ -493,7 +627,7 @@ poster.post("/emergency/deactivate", async (req: any, res: any) => {
               });
             }
 
-            io.emit("deactivate", emergency);
+            io.emit("deactivate", req.query.incidentName);
             pass = match;
             break;
           }
@@ -501,9 +635,11 @@ poster.post("/emergency/deactivate", async (req: any, res: any) => {
       }
       if (pass) {
         mqttClient.publish("pi/on_off", "Not EMGC");
-        return res.send({ ok: true, emergency });
-      }
-      else
+        return res.send({
+          ok: true,
+          message: `${req.query.incidentName} has been Deactivate.`,
+        });
+      } else
         return res
           .status(400)
           .send({ ok: false, message: "Password incorrect." });

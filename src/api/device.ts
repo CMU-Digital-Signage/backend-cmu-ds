@@ -2,17 +2,33 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
+import {
+  bucketName,
+  folderDevice,
+  minioClient,
+  uploadFile,
+} from "../utils/config";
 
 export const device = Router();
 
 // GET /device : return array of devices
 device.get("/", async (req: any, res: any) => {
   try {
-    const data = await prisma.device.findMany({
+    let data = await prisma.device.findMany({
       orderBy: {
         deviceName: "asc",
       },
     });
+    const promises = data.map(async (e) => {
+      if (e.location) {
+        const url = await minioClient.presignedGetObject(
+          bucketName,
+          e.location
+        );
+        e.location = url;
+      }
+    });
+    await Promise.all(promises);
     return res.send({ ok: true, data });
   } catch (err: any) {
     return res
@@ -74,6 +90,11 @@ device.post("/", async (req: any, res: any) => {
 // PUT /device : edit device in database
 device.put("/", async (req: any, res: any) => {
   try {
+    const file: File | any | null = req.body.location;
+    const path = `${folderDevice}/${file?.name}`;
+    if (file.dataURL) {
+      uploadFile(file, path);
+    }
     try {
       const device = await prisma.device.update({
         where: {
@@ -82,12 +103,24 @@ device.put("/", async (req: any, res: any) => {
         data: {
           deviceName: req.body.deviceName,
           room: req.body.room,
-          location: req.body.location,
+          location: file ? path : null,
           description: req.body.description,
         },
       });
+      if (device.location) {
+        const url = await minioClient.presignedGetObject(
+          bucketName,
+          device.location
+        );
+        device.location = url;
+      }
+
       io.emit("updateDevice", device);
-      return res.send({ ok: true, message: "Edit device successfully." });
+      return res.send({
+        ok: true,
+        device,
+        message: "Edit device successfully.",
+      });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === "P2002") {
@@ -104,6 +137,8 @@ device.put("/", async (req: any, res: any) => {
       }
     }
   } catch (err) {
+    console.log(err);
+
     return res
       .status(500)
       .send({ ok: false, message: "Internal Server Error" });
@@ -119,7 +154,12 @@ device.delete("/", async (req: any, res: any) => {
           MACaddress: req.query.MACaddress,
         },
       });
-      io.emit("deleteDevice", device);
+      (async () => {
+        if (device.location)
+          await minioClient.removeObject(bucketName, device.location);
+      })();
+
+      io.emit("deleteDevice", req.query.MACaddress);
       return res.send({ ok: true, message: "Delete device successfully." });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {

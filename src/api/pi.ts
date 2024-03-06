@@ -126,7 +126,7 @@ pi.post("/status", async (req: any, res: any) => {
         MACaddress: req.query.mac,
       },
       data: {
-        status: req.query.status,
+        status: req.query.status === "True" ? true : false,
       },
     });
     io.emit("turnOnOffDevice", deviceStatus);

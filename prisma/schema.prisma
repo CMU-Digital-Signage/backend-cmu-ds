@@ -62,7 +62,7 @@ model Display {
 
 model Emergency {
   incidentName   String  @id @db.VarChar(255)
-  emergencyImage String  @db.VarChar(255)
+  emergencyImage String  @db.Text
   description    String? @db.VarChar(255)
   status         Boolean @default(false)
 }

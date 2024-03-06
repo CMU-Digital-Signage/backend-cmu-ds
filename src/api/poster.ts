@@ -438,23 +438,34 @@ poster.put("/emergency", async (req: any, res: any) => {
           if (e.password?.length) {
             const match = await bcrypt.compare(password, e.password);
             if (match) {
-              emergency = await prisma.emergency.update({
-                where: {
-                  incidentName: req.query.incidentName,
-                },
-                data: { emergencyImage: req.body.emergencyImage, status: true },
-              });
-              io.emit("activate", emergency);
-              pass = match;
-              break;
+              try {
+                emergency = await prisma.emergency.update({
+                  where: {
+                    incidentName: req.query.incidentName,
+                  },
+                  data: {
+                    emergencyImage: req.body.emergencyImage,
+                    status: true,
+                  },
+                });
+                io.emit("activate", emergency);
+                pass = match;
+                break;
+              } catch (err) {}
             }
           }
         }
-        if (pass) return res.send({ ok: true, emergency });
-        else
+        if (pass) {
+          return res.send({
+            ok: true,
+            message: `${req.query.incidentName} has been Activate.`,
+            emergency,
+          });
+        } else {
           return res
             .status(400)
             .send({ ok: false, message: "Password incorrect." });
+        }
       }
 
       if (req.req.query.incidentName !== req.body.incidentName) {

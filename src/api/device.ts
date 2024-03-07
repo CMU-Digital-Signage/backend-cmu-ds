@@ -92,9 +92,12 @@ device.put("/", async (req: any, res: any) => {
   try {
     const file: File | any | null = req.body.location;
     const path = `${folderDevice}/${file?.name}`;
-    if (file.dataURL) {
-      uploadFile(file, path);
-    }
+    // (async () => {
+    //   if (path) await minioClient.removeObject(bucketName, path);
+    // })();
+    // if (file) {
+    //   uploadFile(file, path);
+    // }
     try {
       const device = await prisma.device.update({
         where: {
@@ -107,13 +110,13 @@ device.put("/", async (req: any, res: any) => {
           description: req.body.description,
         },
       });
-      if (device.location) {
-        const url = await minioClient.presignedGetObject(
-          bucketName,
-          device.location
-        );
-        device.location = url;
-      }
+      // if (device.location) {
+      //   const url = await minioClient.presignedGetObject(
+      //     bucketName,
+      //     device.location
+      //   );
+      //   device.location = url;
+      // }
 
       io.emit("updateDevice", device);
       return res.send({

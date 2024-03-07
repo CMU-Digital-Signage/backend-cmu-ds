@@ -31,13 +31,16 @@ export const folderEmer = "emergencies";
 export const uploadFile = (file: any, path: string) => {
   const base64Data = file.dataURL.replace(/^data:image\/\w+;base64,/, "");
   const bufferData = Buffer.from(base64Data, "base64");
+  const type = file.type.includes("/")
+    ? file.type
+    : `image/${file.type.replace(".", "")}`;
   minioClient.putObject(
     bucketName,
     path,
     bufferData,
     file.size,
     {
-      "Content-Type": file.type,
+      "Content-Type": type,
     },
     function (err: any, objInfo: any) {
       if (err) {

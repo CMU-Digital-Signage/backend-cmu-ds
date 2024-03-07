@@ -227,35 +227,35 @@ poster.put("/", async (req: any, res: any) => {
       },
     });
 
-    if (oldTitle) {
-      const promises = oldTitle?.Image.map(async (e) => {
-        try {
-          await minioClient.removeObject(bucketName, e.image);
-        } catch (err) {}
-      });
-      await Promise.all(promises);
-    }
-    await prisma.image.deleteMany({
-      where: {
-        posterId: req.query.posterId,
-      },
-    });
-    const imageCol = req.body.poster.image;
-    let image: Image[] = [];
-    const promises1 = imageCol.map(async (e: any) => {
-      const file = e.image;
-      const path = `${folderPoster}/${file.name}`;
-      uploadFile(file, path);
-      image.push({
-        posterId: req.query.posterId,
-        priority: e.priority,
-        image: path,
-      });
-    });
-    await Promise.all(promises1);
-    await prisma.image.createMany({
-      data: image,
-    });
+    // if (oldTitle) {
+    //   const promises = oldTitle?.Image.map(async (e) => {
+    //     try {
+    //       await minioClient.removeObject(bucketName, e.image);
+    //     } catch (err) {}
+    //   });
+    //   await Promise.all(promises);
+    // }
+    // await prisma.image.deleteMany({
+    //   where: {
+    //     posterId: req.query.posterId,
+    //   },
+    // });
+    // const imageCol = req.body.poster.image;
+    // let image: Image[] = [];
+    // const promises1 = imageCol.map(async (e: any) => {
+    //   const file = e.image;
+    //   const path = `${folderPoster}/${file.name}`;
+    //   uploadFile(file, path);
+    //   image.push({
+    //     posterId: req.query.posterId,
+    //     priority: e.priority,
+    //     image: path,
+    //   });
+    // });
+    // await Promise.all(promises1);
+    // await prisma.image.createMany({
+    //   data: image,
+    // });
 
     await prisma.display.deleteMany({
       where: {
@@ -281,19 +281,19 @@ poster.put("/", async (req: any, res: any) => {
     });
     await prisma.display.createMany({ data: display });
 
-    const promises = image.map(async (e) => {
-      try {
-        const url = await minioClient.presignedGetObject(bucketName, e.image);
-        e.image = url;
-      } catch (err) {}
-    });
-    await Promise.all(promises);
+    // const promises = image.map(async (e) => {
+    //   try {
+    //     const url = await minioClient.presignedGetObject(bucketName, e.image);
+    //     e.image = url;
+    //   } catch (err) {}
+    // });
+    // await Promise.all(promises);
 
     const updatePoster = display.map((e) => {
       return {
         ...e,
         ...editPoster,
-        image: [...image],
+        // image: [...image],
       };
     });
 
@@ -469,7 +469,7 @@ poster.put("/emergency", async (req: any, res: any) => {
         }
       }
 
-      if (req.req.query.incidentName !== req.body.incidentName) {
+      if (req.query.incidentName !== req.body.incidentName) {
         const oldName = await prisma.emergency.findUnique({
           where: {
             incidentName: req.query.incidentName,
@@ -492,7 +492,7 @@ poster.put("/emergency", async (req: any, res: any) => {
         data: {
           incidentName: req.body.incidentName,
           emergencyImage: path,
-          description: req.body.description,
+          description: req.body.description || null,
         },
       });
 

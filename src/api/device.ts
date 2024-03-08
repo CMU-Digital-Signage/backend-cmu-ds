@@ -26,8 +26,8 @@ device.get("/", async (req: any, res: any) => {
           bucketName,
           e.location
         );
-        e.location = url;
-        e.location = await convertUrlToFile(e.location);
+        e.location = await convertUrlToFile(url);
+        e.location.name = `${e.MACaddress}${e.location.type}`;
       }
     });
     await Promise.all(promises);

@@ -90,16 +90,16 @@ pi.get("/poster", async (req: any, res: any) => {
       }
     });
 
-    const floor = await prisma.device
+    const room = await prisma.device
       .findUnique({
         select: { room: true },
         where: { MACaddress: req.query.mac },
       })
       .then((e) => {
-        return e?.room?.charAt(0);
+        return e?.room;
       });
 
-    return res.send({ ok: true, floor, poster });
+    return res.send({ ok: true, room, poster });
   } catch (err) {
     return res
       .status(500)

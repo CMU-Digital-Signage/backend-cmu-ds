@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { io } from "../app";
 import {
   bucketName,
+  convertUrlToFile,
   folderDevice,
   minioClient,
   uploadFile,
@@ -14,18 +15,19 @@ export const device = Router();
 // GET /device : return array of devices
 device.get("/", async (req: any, res: any) => {
   try {
-    let data = await prisma.device.findMany({
+    let data: any = await prisma.device.findMany({
       orderBy: {
         deviceName: "asc",
       },
     });
-    const promises = data.map(async (e) => {
+    const promises = data.map(async (e: any) => {
       if (e.location) {
         const url = await minioClient.presignedGetObject(
           bucketName,
           e.location
         );
         e.location = url;
+        e.location = await convertUrlToFile(e.location);
       }
     });
     await Promise.all(promises);
@@ -92,14 +94,14 @@ device.put("/", async (req: any, res: any) => {
   try {
     const file: File | any | null = req.body.location;
     const path = `${folderDevice}/${file?.name}`;
-    // (async () => {
-    //   if (path) await minioClient.removeObject(bucketName, path);
-    // })();
-    // if (file) {
-    //   uploadFile(file, path);
-    // }
+    (async () => {
+      if (path) await minioClient.removeObject(bucketName, path);
+    })();
+    if (file) {
+      uploadFile(file, path);
+    }
     try {
-      const device = await prisma.device.update({
+      let device: any = await prisma.device.update({
         where: {
           MACaddress: req.body.MACaddress,
         },
@@ -110,13 +112,8 @@ device.put("/", async (req: any, res: any) => {
           description: req.body.description,
         },
       });
-      // if (device.location) {
-      //   const url = await minioClient.presignedGetObject(
-      //     bucketName,
-      //     device.location
-      //   );
-      //   device.location = url;
-      // }
+
+      device.location = file;
 
       io.emit("updateDevice", device);
       return res.send({

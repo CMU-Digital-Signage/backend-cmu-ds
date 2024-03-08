@@ -1,7 +1,6 @@
 import express from "express";
 import { admin } from "./admin";
 import { cmuOAuth } from "./cmuOAuth";
-import { cpe } from "./cpe";
 import { device } from "./device";
 import { poster } from "./poster";
 import { user } from "./user";
@@ -22,7 +21,6 @@ routes.use(jwtMiddleware.unless({ path: unprotected }));
 
 routes.use("/cmuOAuth", cmuOAuth);
 routes.use("/pi", pi);
-routes.use("/cpe", cpe);
 routes.use("/user", user);
 routes.use("/admin", admin);
 routes.use("/device", device);

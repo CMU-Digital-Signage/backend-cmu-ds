@@ -76,8 +76,8 @@ poster.get("/", async (req: any, res: any) => {
                 bucketName,
                 img.image
               );
-              img.image = url;
-              img.image = await convertUrlToFile(img.image);
+              img.image = await convertUrlToFile(url);
+              img.image.name = `${e.title}-${img.priority}${img.image.type}`;
             } catch (err) {}
           });
           await Promise.all(promises);
@@ -335,16 +335,16 @@ poster.delete("/", async (req: any, res: any) => {
 // GET /poster/emergency : get emergency poster
 poster.get("/emergency", async (req: any, res: any) => {
   try {
-    const emergency = await prisma.emergency.findMany();
-    const promises = emergency.map(async (e) => {
+    let emergency: any = await prisma.emergency.findMany();
+    const promises = emergency.map(async (e: any) => {
       if (e.incidentName !== "banner") {
         try {
           const url = await minioClient.presignedGetObject(
             bucketName,
             e.emergencyImage
           );
-          e.emergencyImage = url;
-          e.emergencyImage = await convertUrlToFile(e.emergencyImage);
+          e.emergencyImage = await convertUrlToFile(url);
+          e.emergencyImage.name = `${e.incidentName}${e.emergencyImage.type}`;
         } catch (err) {}
       }
     });

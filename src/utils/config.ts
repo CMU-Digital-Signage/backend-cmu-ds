@@ -1,5 +1,6 @@
 import mqtt from "mqtt";
 import * as Minio from "minio";
+import axios from "axios";
 
 const secret = process.env.JWT_SECRET;
 
@@ -48,4 +49,29 @@ export const uploadFile = (file: any, path: string) => {
       }
     }
   );
+};
+
+export const convertUrlToFile = async (url: string): Promise<any> => {
+  const response = await convertImageToBase64(url);
+  const base64Data = response.split(",")[1];
+  const name = url.substring(url.lastIndexOf("/") + 1, url.lastIndexOf("?"));
+  const type = name.substring(name.lastIndexOf("."));
+  const size = (base64Data.length * 3) / 4;
+
+  return {
+    dataURL: response,
+    lastModified: new Date().getTime(),
+    lastModifiedDate: new Date(),
+    name,
+    size,
+    type,
+  };
+};
+
+export const convertImageToBase64 = async (url: string): Promise<string> => {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+  });
+  const base64Data = Buffer.from(response.data, "binary").toString("base64");
+  return `data:${response.headers["content-type"]};base64,${base64Data}`;
 };

@@ -59,6 +59,13 @@ admin.delete("/", async (req: any, res: any) => {
           isAdmin: false,
         },
       });
+      if (!user.firstName) {
+        await prisma.user.delete({
+          where: {
+            id: req.query.id,
+          },
+        });
+      }
       io.emit("deleteAdmin", user);
       return res.send({ ok: true, user });
     } catch (err) {

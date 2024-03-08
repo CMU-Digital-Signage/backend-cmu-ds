@@ -73,28 +73,17 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       },
     });
 
-    if (user && response2.itaccounttype_id === "StdAcc") {
-      response2.itaccounttype_id = "MISEmpAcc";
-    }
-
-    if (user?.isAdmin) {
-      if (user.firstName === null) {
-        user = await prisma.user.update({
-          where: {
-            email,
-          },
-          data: {
-            firstName,
-            lastName,
-          },
-        });
-      }
-    } else if (
-      !user &&
-      response2.itaccounttype_id === "MISEmpAcc" 
-      // &&
-      // response2.organization_name_EN === "Faculty of Engineering"
+    if (
+      (user && !user.isAdmin && response2.itaccounttype_id !== "MISEmpAcc") ||
+      (!user &&
+        response2.itaccounttype_id !== "MISEmpAcc" &&
+        response2.organization_name_EN !== "Faculty of Engineering")
     ) {
+      return res.status(401).send({
+        ok: false,
+        message: "401 | Your CMU account was not authorized for this website",
+      });
+    } else if (!user) {
       user = await prisma.user.create({
         data: {
           firstName,
@@ -103,10 +92,15 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         },
       });
       io.emit("updateUser", user);
-    } else if (!user || !user.isAdmin) {
-      return res.status(401).send({
-        ok: false,
-        message: "401 | Your CMU account was not authorized for this website",
+    } else if (!user.firstName) {
+      user = await prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          firstName,
+          lastName,
+        },
       });
     }
 

@@ -26,8 +26,7 @@ device.get("/", async (req: any, res: any) => {
           bucketName,
           e.location
         );
-        e.location = await convertUrlToFile(url);
-        e.location.name = `${e.MACaddress}${e.location.type}`;
+        e.location = url;
       }
     });
     await Promise.all(promises);
@@ -92,11 +91,20 @@ device.post("/", async (req: any, res: any) => {
 // PUT /device : edit device in database
 device.put("/", async (req: any, res: any) => {
   try {
-    const file: File | any | null = req.body.location;
+    const oldName = await prisma.device.findUnique({
+      where: {
+        MACaddress: req.body.MACaddress,
+      },
+    });
+    if (!oldName) {
+      return res.status(404).send({ error: "Device not found" });
+    }
+    await minioClient.removeObject(bucketName, `${oldName.location}`);
+    let file: File | any | null = req.body.location;
+    if (typeof file === "string") {
+      file = await convertUrlToFile(file);
+    }
     const path = `${folderDevice}/${file?.name}`;
-    (async () => {
-      if (path) await minioClient.removeObject(bucketName, path);
-    })();
     if (file) {
       uploadFile(file, path);
     }

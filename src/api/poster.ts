@@ -76,8 +76,7 @@ poster.get("/", async (req: any, res: any) => {
                 bucketName,
                 img.image
               );
-              img.image = await convertUrlToFile(url);
-              img.image.name = `${e.title}-${img.priority}${img.image.type}`;
+              img.image = url;
             } catch (err) {}
           });
           await Promise.all(promises);
@@ -118,7 +117,10 @@ poster.post("/", async (req: any, res: any) => {
         const imageCol = req.body.poster.image;
         let image: Image[] = [];
         const promises1 = imageCol.map(async (e: any) => {
-          const file = e.image;
+          let file = e.image;
+          if (typeof file === "string") {
+            file = await convertUrlToFile(file);
+          }
           const path = `${folderPoster}/${file.name}`;
           uploadFile(file, path);
           image.push({
@@ -195,7 +197,7 @@ poster.post("/", async (req: any, res: any) => {
 // PUT /poster : edit poster and schedule
 poster.put("/", async (req: any, res: any) => {
   try {
-    const oldTitle = await prisma.poster.findUnique({
+    const oldName = await prisma.poster.findUnique({
       where: {
         posterId: req.query.posterId,
       },
@@ -214,8 +216,8 @@ poster.put("/", async (req: any, res: any) => {
       },
     });
 
-    if (oldTitle) {
-      const promises = oldTitle?.Image.map(async (e) => {
+    if (oldName) {
+      const promises = oldName.Image.map(async (e) => {
         try {
           await minioClient.removeObject(bucketName, e.image);
         } catch (err) {}
@@ -230,7 +232,10 @@ poster.put("/", async (req: any, res: any) => {
     const imageCol = req.body.poster.image;
     let image: Image[] = [];
     const promises1 = imageCol.map(async (e: any) => {
-      const file = e.image;
+      let file = e.image;
+      if (typeof file === "string") {
+        file = await convertUrlToFile(file);
+      }
       const path = `${folderPoster}/${file.name}`;
       uploadFile(file, path);
       image.push({
@@ -343,8 +348,7 @@ poster.get("/emergency", async (req: any, res: any) => {
             bucketName,
             e.emergencyImage
           );
-          e.emergencyImage = await convertUrlToFile(url);
-          e.emergencyImage.name = `${e.incidentName}${e.emergencyImage.type}`;
+          e.emergencyImage = url;
         } catch (err) {}
       }
     });
@@ -444,19 +448,19 @@ poster.put("/emergency", async (req: any, res: any) => {
         }
       }
 
-      if (req.query.incidentName !== req.body.incidentName) {
-        const oldName = await prisma.emergency.findUnique({
-          where: {
-            incidentName: req.query.incidentName,
-          },
-        });
-        if (!oldName) {
-          return res.status(404).send({ error: "Emergency not found" });
-        }
+      const oldName = await prisma.emergency.findUnique({
+        where: {
+          incidentName: req.query.incidentName,
+        },
+      });
+      if (oldName) {
         await minioClient.removeObject(bucketName, `${oldName.emergencyImage}`);
       }
 
-      const file = req.body.emergencyImage;
+      let file = req.body.emergencyImage;
+      if (typeof file === "string") {
+        file = await convertUrlToFile(file);
+      }
       const path = `${folderEmer}/${file.name}`;
       uploadFile(file, path);
 

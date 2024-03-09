@@ -2,12 +2,7 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
-import {
-  bucketName,
-  convertUrlToFile,
-  minioClient,
-  mqttClient,
-} from "../utils/config";
+import { bucketName, minioClient, mqttClient } from "../utils/config";
 
 mqttClient.on("connect", () => {
   // console.log("connected.");
@@ -60,44 +55,40 @@ pi.get("/poster", async (req: any, res: any) => {
       `;
 
     let poster: any[] = [];
-    await Promise.all(
-      data.map(async (e: any) => {
-        const imgCol = data.filter((p: any) => p.title === e.title);
-        let image: any[] = [];
-        const promises = imgCol.map(async (p: any) => {
-          try {
-            if (!image.find((e) => e.priority === p.priority)) {
-              const url = await minioClient.presignedGetObject(
-                bucketName,
-                p.image
-              );
-              let file = await convertUrlToFile(url);
-              file.name = `${p.title}-${p.priority}${file.type}`;
-              image.push({ image: file, priority: p.priority });
-            }
-          } catch (err) {}
-        });
-        await Promise.all(promises);
+    data.forEach(async (e: any) => {
+      const imgCol = data.filter((p: any) => p.title === e.title);
+      let image: any[] = [];
+      const promises = imgCol.map(async (p: any) => {
+        try {
+          if (!image.find((e) => e.priority === p.priority)) {
+            const url = await minioClient.presignedGetObject(
+              bucketName,
+              p.image
+            );
+            image.push({ image: url, priority: p.priority });
+          }
+        } catch (err) {}
+      });
+      await Promise.all(promises);
 
-        if (
-          !poster.find(
-            (p: any) =>
-              p.MACaddress === e.MACaddress &&
-              p.title === e.title &&
-              p.startDate.toDateString() === e.startDate.toDateString() &&
-              p.endDate.toDateString() === e.endDate.toDateString() &&
-              p.startTime === e.startTime &&
-              p.endTime === e.endTime
-          )
-        ) {
-          const { priority, ...rest } = e;
-          poster.push({
-            ...rest,
-            image: [...image],
-          });
-        }
-      })
-    );
+      if (
+        !poster.find(
+          (p: any) =>
+            p.MACaddress === e.MACaddress &&
+            p.title === e.title &&
+            p.startDate.toDateString() === e.startDate.toDateString() &&
+            p.endDate.toDateString() === e.endDate.toDateString() &&
+            p.startTime === e.startTime &&
+            p.endTime === e.endTime
+        )
+      ) {
+        const { priority, ...rest } = e;
+        poster.push({
+          ...rest,
+          image: [...image],
+        });
+      }
+    });
 
     const room = await prisma.device
       .findUnique({

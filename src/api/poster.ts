@@ -8,6 +8,7 @@ import {
   convertUrlToFile,
   folderEmer,
   folderPoster,
+  imageCache,
   minioClient,
   mqttClient,
   uploadFile,
@@ -219,11 +220,14 @@ poster.put("/", async (req: any, res: any) => {
     if (oldName) {
       const promises = oldName.Image.map(async (e) => {
         try {
+          delete imageCache[e.image];
           await minioClient.removeObject(bucketName, e.image);
         } catch (err) {}
       });
       await Promise.all(promises);
     }
+    console.log(imageCache);
+
     await prisma.image.deleteMany({
       where: {
         posterId: req.query.posterId,
@@ -316,6 +320,7 @@ poster.delete("/", async (req: any, res: any) => {
 
       const promises = image.map(async (e) => {
         try {
+          delete imageCache[e.image];
           await minioClient.removeObject(bucketName, e.image);
         } catch (err) {}
       });

@@ -2,7 +2,12 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { Prisma } from "@prisma/client";
 import { io } from "../app";
-import { bucketName, minioClient, mqttClient } from "../utils/config";
+import {
+  bucketName,
+  imageCache,
+  minioClient,
+  mqttClient,
+} from "../utils/config";
 
 mqttClient.on("connect", () => {
   // console.log("connected.");
@@ -43,6 +48,15 @@ pi.post("/", async (req: any, res: any) => {
 
 pi.get("/poster", async (req: any, res: any) => {
   try {
+    const existDevice = await prisma.device.findUnique({
+      where: {
+        MACaddress: req.query.mac,
+      },
+    });
+    if (!existDevice) {
+      return res.status(404).send({ ok: false, message: "Device not found" });
+    }
+
     const date = new Date();
     date.setHours(date.getHours() + 7);
     date.setUTCHours(0, 0, 0, 0);
@@ -61,11 +75,17 @@ pi.get("/poster", async (req: any, res: any) => {
       const promises = imgCol.map(async (p: any) => {
         try {
           if (!image.find((e) => e.priority === p.priority)) {
-            const url = await minioClient.presignedGetObject(
-              bucketName,
-              p.image
-            );
-            image.push({ image: url, priority: p.priority });
+            if (imageCache[p.image]) {
+              image.push({ image: imageCache[p.image], priority: p.priority });
+            } else {
+              const url = await minioClient.presignedGetObject(
+                bucketName,
+                p.image
+              );
+              imageCache[p.image] = url;
+              imageCache[url] = p.image;
+              image.push({ image: url, priority: p.priority });
+            }
           }
         } catch (err) {}
       });

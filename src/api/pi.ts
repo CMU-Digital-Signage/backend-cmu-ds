@@ -94,12 +94,11 @@ pi.get("/poster", async (req: any, res: any) => {
       if (
         !poster.find(
           (p: any) =>
-            p.MACaddress === e.MACaddress &&
             p.title === e.title &&
-            p.startDate.toDateString() === e.startDate.toDateString() &&
-            p.endDate.toDateString() === e.endDate.toDateString() &&
-            p.startTime === e.startTime &&
-            p.endTime === e.endTime
+            p.startDate.getTime() === e.startDate.getTime() &&
+            p.endDate.getTime() === e.endDate.getTime() &&
+            p.startTime.getTime() === e.startTime.getTime() &&
+            p.endTime.getTime() === e.endTime.getTime()
         )
       ) {
         const { priority, ...rest } = e;

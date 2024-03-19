@@ -97,7 +97,7 @@ device.put("/", async (req: any, res: any) => {
       },
     });
     if (!oldName) {
-      return res.status(404).send({ error: "Device not found" });
+      return res.status(404).send({ ok: false, message: "Device not found" });
     }
     await minioClient.removeObject(bucketName, `${oldName.location}`);
     let file: File | any | null = req.body.location;

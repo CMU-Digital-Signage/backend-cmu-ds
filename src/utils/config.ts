@@ -29,6 +29,8 @@ export const folderDevice = "devices";
 export const folderPoster = "posters";
 export const folderEmer = "emergencies";
 
+export const imageCache: any = {};
+
 export const uploadFile = (file: any, path: string) => {
   const base64Data = file.dataURL.replace(/^data:image\/\w+;base64,/, "");
   const bufferData = Buffer.from(base64Data, "base64");

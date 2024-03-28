@@ -31,6 +31,15 @@ export const folderEmer = "emergencies";
 
 export const imageCache: any = {};
 
+export const clearImageCache = () => {
+  for (const key in imageCache) {
+    if (Object.prototype.hasOwnProperty.call(imageCache, key)) {
+      delete imageCache[key];
+    }
+  }
+  console.log("imageCache cleared at 4:00 am");
+};
+
 export const uploadFile = (file: any, path: string) => {
   const base64Data = file.dataURL.replace(/^data:image\/\w+;base64,/, "");
   const bufferData = Buffer.from(base64Data, "base64");

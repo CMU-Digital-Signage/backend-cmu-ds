@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import { json } from "body-parser";
 import { routes } from "./api";
 import { Socket } from "socket.io";
+import schedule from 'node-schedule';
+import { clearImageCache } from "./utils/config";
 
 const socket = require("socket.io");
 dotenv.config();
@@ -30,6 +32,9 @@ app.use(`${prefix}/`, routes);
 const server = app.listen(port, () =>
   console.log(`Server running on port ${port}!`)
 );
+
+// Schedule to clear imageCache at 4:00 am every day
+schedule.scheduleJob('0 4 * * *', clearImageCache);
 
 const io = socket(server, {
   cors: { origin: "*" },

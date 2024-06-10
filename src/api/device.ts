@@ -41,46 +41,38 @@ device.get("/", async (req: any, res: any) => {
 // POST /device : add device into database
 device.post("/", async (req: any, res: any) => {
   try {
-    try {
-      let device = await prisma.device.findUnique({
-        where: {
+    let device = await prisma.device.findUnique({
+      where: {
+        MACaddress: req.body.MACaddress,
+      },
+    });
+    if (device && device.deviceName) {
+      return res.status(400).send({
+        ok: false,
+        message: "MAC Address has already been added.",
+      });
+    } else {
+      let file: File | any | null = req.body.location;
+      if (typeof file === "string") {
+        file = await convertUrlToFile(file);
+      }
+      const path = `${folderDevice}/${file?.name}`;
+      if (file) {
+        uploadFile(file, path);
+      }
+      device = await prisma.device.create({
+        data: {
           MACaddress: req.body.MACaddress,
+          deviceName: req.body.deviceName,
+          room: req.body.room,
+          location: file ? path : null,
+          description: req.body.description,
+          status: true,
         },
       });
-      if (!device) {
-        return res.status(400).send({
-          ok: false,
-          message: "MAC Address not found.",
-        });
-      } else if (device.deviceName) {
-        return res.status(400).send({
-          ok: false,
-          message: "MAC Address has already been added.",
-        });
-      } else {
-        device = await prisma.device.update({
-          where: {
-            MACaddress: req.body.MACaddress,
-          },
-          data: {
-            deviceName: req.body.deviceName,
-            room: req.body.room,
-            location: req.body.location,
-            description: req.body.description,
-          },
-        });
-      }
-      io.emit("addDevice", device);
-      return res.send({ ok: true, message: "Add device successfully." });
-    } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if (err.code === "P2002") {
-          return res
-            .status(400)
-            .send({ ok: false, message: "MAC Address not found.", err });
-        }
-      }
     }
+    io.emit("addDevice", device);
+    return res.send({ ok: true, device, message: "Add device successfully." });
   } catch (err) {
     return res
       .status(500)

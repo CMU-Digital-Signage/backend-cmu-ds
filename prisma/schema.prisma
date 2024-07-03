@@ -34,6 +34,7 @@ model Poster {
   id          String    @db.VarChar(255)
   title       String    @unique(map: "title") @db.VarChar(255)
   description String?   @db.VarChar(255)
+  type        Type      @default(POSTER)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
   Display     Display[]
@@ -74,4 +75,10 @@ model Image {
   Poster   Poster @relation(fields: [posterId], references: [posterId], onDelete: Cascade, map: "Image_Poster_FK")
 
   @@id([posterId, priority])
+}
+
+enum Type {
+  POSTER @map("Poster")
+  URL    @map("Url")
+  VIDEO  @map("Video")
 }

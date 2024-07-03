@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
-import { Image, Prisma } from "@prisma/client";
+import { Image, Prisma, Type } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { io } from "../app";
 import {
@@ -52,7 +52,7 @@ poster.get("/search", async (req: any, res: any) => {
 poster.get("/", async (req: any, res: any) => {
   try {
     const data: any =
-      await prisma.$queryRaw`SELECT posterId, id, title, description, createdAt,
+      await prisma.$queryRaw`SELECT posterId, id, title, description, type, createdAt,
                               MACaddress, startDate, endDate, startTime, endTime, duration
                               FROM Poster NATURAL JOIN Display`;
     const imgCol: any = await prisma.image.findMany();
@@ -114,7 +114,6 @@ poster.post("/", async (req: any, res: any) => {
             User: { connect: { id: user?.id } },
           },
         });
-
         const imageCol = req.body.poster.image;
         let image: Image[] = [];
         const promises1 = imageCol.map(async (e: any) => {
@@ -226,8 +225,6 @@ poster.put("/", async (req: any, res: any) => {
       });
       await Promise.all(promises);
     }
-    console.log(imageCache);
-
     await prisma.image.deleteMany({
       where: {
         posterId: req.query.posterId,

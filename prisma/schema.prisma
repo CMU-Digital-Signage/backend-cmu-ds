@@ -78,7 +78,7 @@ model Image {
 }
 
 enum Type {
-  POSTER @map("Poster")
-  URL    @map("Url")
-  VIDEO  @map("Video")
+  POSTER  @map("Poster")
+  WEBVIEW @map("Webview")
+  VIDEO   @map("Video")
 }

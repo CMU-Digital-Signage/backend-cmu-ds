@@ -79,9 +79,9 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
         response2.itaccounttype_id !== "MISEmpAcc" &&
         response2.organization_name_EN !== "Faculty of Engineering")
     ) {
-      return res.status(401).send({
+      return res.status(403).send({
         ok: false,
-        message: "401 | Your CMU account was not authorized for this website",
+        message: "403 | Your CMU account was not permission for this website",
       });
     } else if (!user) {
       user = await prisma.user.create({

@@ -38,7 +38,7 @@ poster.get("/search", async (req: any, res: any) => {
   try {
     const regex = `.*${req.query.title}.*`;
     const poster =
-      await prisma.$queryRaw`SELECT title, MACaddress, startDate, endDate, startTime, endTime
+      await prisma.$queryRaw`SELECT title, type, MACaddress, startDate, endDate, startTime, endTime
                               FROM Poster NATURAL JOIN Display WHERE title REGEXP ${regex}`;
     return res.send({ ok: true, poster });
   } catch (err) {
@@ -68,9 +68,8 @@ poster.get("/", async (req: any, res: any) => {
             p.startTime.getTime() === e.startTime.getTime() &&
             p.endTime.getTime() === e.endTime.getTime()
         );
-
-        if (!existingPoster) {
-          let image = imgCol.filter((i: any) => i.posterId === e.posterId);
+        let image = imgCol.filter((i: any) => i.posterId === e.posterId);
+        if (!existingPoster && [Type.POSTER].includes(e.type.toUpperCase())) {
           const promises = image.map(async (img: any) => {
             try {
               const url = await minioClient.presignedGetObject(
@@ -81,8 +80,8 @@ poster.get("/", async (req: any, res: any) => {
             } catch (err) {}
           });
           await Promise.all(promises);
-          poster.push({ ...e, image: [...image] });
         }
+        poster.push({ ...e, image: [...image] });
       })
     );
 
@@ -111,25 +110,30 @@ poster.post("/", async (req: any, res: any) => {
           data: {
             title: req.body.poster.title,
             description: req.body.poster.description,
+            type: Type[req.body.poster.type.toUpperCase() as Type],
             User: { connect: { id: user?.id } },
           },
         });
         const imageCol = req.body.poster.image;
         let image: Image[] = [];
-        const promises1 = imageCol.map(async (e: any) => {
-          let file = e.image;
-          if (typeof file === "string") {
-            file = await convertUrlToFile(file);
-          }
-          const path = `${folderPoster}/${file.name}`;
-          uploadFile(file, path);
-          image.push({
-            posterId: createPoster.posterId,
-            priority: e.priority,
-            image: path,
+        if (req.body.poster.type.toUpperCase() == Type.WEBVIEW) {
+          image = [{ posterId: createPoster.posterId, ...imageCol[0] }];
+        } else {
+          const promises1 = imageCol.map(async (e: any) => {
+            let file = e.image;
+            if (typeof file === "string") {
+              file = await convertUrlToFile(file);
+            }
+            const path = `${folderPoster}/${file.name}`;
+            uploadFile(file, path);
+            image.push({
+              posterId: createPoster.posterId,
+              priority: e.priority,
+              image: path,
+            });
           });
-        });
-        await Promise.all(promises1);
+          await Promise.all(promises1);
+        }
         await prisma.image.createMany({
           data: image,
         });
@@ -182,6 +186,8 @@ poster.post("/", async (req: any, res: any) => {
           },
         });
       }
+      console.log(err);
+
       return res.status(400).send({
         ok: false,
         message: "something went wrong!",

@@ -186,8 +186,6 @@ poster.post("/", async (req: any, res: any) => {
           },
         });
       }
-      console.log(err);
-
       return res.status(400).send({
         ok: false,
         message: "something went wrong!",
@@ -204,57 +202,57 @@ poster.post("/", async (req: any, res: any) => {
 poster.put("/", async (req: any, res: any) => {
   try {
     const oldName = await prisma.poster.findUnique({
-      where: {
-        posterId: req.query.posterId,
-      },
-      include: {
-        Image: true,
-      },
+      where: { posterId: req.query.posterId },
+      include: { Image: true },
     });
 
     const editPoster = await prisma.poster.update({
-      where: {
-        posterId: req.query.posterId,
-      },
+      where: { posterId: req.query.posterId },
       data: {
         title: req.body.poster.title,
         description: req.body.poster.description,
       },
     });
 
-    if (oldName) {
-      const promises = oldName.Image.map(async (e) => {
-        try {
-          delete imageCache[e.image];
-          await minioClient.removeObject(bucketName, e.image);
-        } catch (err) {}
-      });
-      await Promise.all(promises);
-    }
-    await prisma.image.deleteMany({
-      where: {
-        posterId: req.query.posterId,
-      },
-    });
     const imageCol = req.body.poster.image;
-    let image: Image[] = [];
-    const promises1 = imageCol.map(async (e: any) => {
-      let file = e.image;
-      if (typeof file === "string") {
-        file = await convertUrlToFile(file);
+    if (oldName) {
+      if (oldName.type.toUpperCase() == Type.WEBVIEW) {
+        await prisma.image.update({
+          where: {
+            posterId_priority: { posterId: req.query.posterId, priority: 1 },
+          },
+          data: { image: imageCol[0].image },
+        });
+      } else {
+        const promises = oldName.Image.map(async (e) => {
+          try {
+            delete imageCache[e.image];
+            await minioClient.removeObject(bucketName, e.image);
+          } catch (err) {}
+        });
+        await Promise.all(promises);
+        await prisma.image.deleteMany({
+          where: { posterId: req.query.posterId },
+        });
+
+        let image: Image[] = [];
+        const promises1 = imageCol.map(async (e: any) => {
+          let file = e.image;
+          if (typeof file === "string") {
+            file = await convertUrlToFile(file);
+          }
+          const path = `${folderPoster}/${file.name}`;
+          uploadFile(file, path);
+          image.push({
+            posterId: req.query.posterId,
+            priority: e.priority,
+            image: path,
+          });
+        });
+        await Promise.all(promises1);
+        await prisma.image.createMany({ data: image });
       }
-      const path = `${folderPoster}/${file.name}`;
-      uploadFile(file, path);
-      image.push({
-        posterId: req.query.posterId,
-        priority: e.priority,
-        image: path,
-      });
-    });
-    await Promise.all(promises1);
-    await prisma.image.createMany({
-      data: image,
-    });
+    }
 
     await prisma.display.deleteMany({
       where: {
@@ -321,13 +319,15 @@ poster.delete("/", async (req: any, res: any) => {
         where: { posterId: req.query.posterId },
       });
 
-      const promises = image.map(async (e) => {
-        try {
-          delete imageCache[e.image];
-          await minioClient.removeObject(bucketName, e.image);
-        } catch (err) {}
-      });
-      await Promise.all(promises);
+      if ([Type.POSTER as string].includes(deletePoster.type.toUpperCase())) {
+        const promises = image.map(async (e) => {
+          try {
+            delete imageCache[e.image];
+            await minioClient.removeObject(bucketName, e.image);
+          } catch (err) {}
+        });
+        await Promise.all(promises);
+      }
 
       io.emit("deletePoster", deletePoster);
       return res.send({ ok: true, deletePoster });

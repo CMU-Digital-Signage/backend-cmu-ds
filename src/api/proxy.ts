@@ -5,15 +5,24 @@ export const proxy = Router();
 
 proxy.get("/", (req, res) => {
   const url = req.query.url as string;
-  request(url)
-    .on("response", (response: any) => {
-      delete response.headers["x-frame-options"];
-      delete response.headers["content-security-policy"];
-    })
-    .pipe(res)
-    .on("error", (err: any) => {
-      return res
-        .status(500)
-        .send({ ok: false, message: "Internal Server Error" });
-    });
+  try {
+    request(url)
+      .on("response", (response: any) => {
+        // delete response.headers["x-frame-options"];
+        // delete response.headers["content-security-policy"];
+        if (typeof response.headers["x-frame-options"] != "undefined") {
+          return res
+            .status(400)
+            .send({ ok: false, message: "Website cannot display" });
+        } else {
+          return res.send({ ok: true, message: "Success" });
+        }
+      })
+      // .pipe(res)
+      .on("error", (error: any) => {
+        return res.status(400).send({ ok: false, message: error });
+      });
+  } catch (err) {
+    return res.status(400).send({ ok: false, message: `Invalid URL "${url}"` });
+  }
 });

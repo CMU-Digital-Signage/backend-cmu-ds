@@ -8,21 +8,33 @@ proxy.get("/", (req, res) => {
   try {
     request(url)
       .on("response", (response: any) => {
-        // delete response.headers["x-frame-options"];
-        // delete response.headers["content-security-policy"];
-        if (typeof response.headers["x-frame-options"] != "undefined") {
+        if (
+          typeof response.headers["x-frame-options"] != "undefined" ||
+          response.headers["content-security-policy"]?.includes(
+            "frame-ancestors"
+          )
+        ) {
+          // delete response.headers["x-frame-options"];
+          // delete response.headers["content-security-policy"];
           return res
             .status(400)
-            .send({ ok: false, message: "Website cannot display" });
+            .send({
+              ok: false,
+              message: "Website does not allow display due to security restrictions",
+            });
         } else {
           return res.send({ ok: true, message: "Success" });
         }
       })
       // .pipe(res)
       .on("error", (error: any) => {
-        return res.status(400).send({ ok: false, message: error });
+        return res
+          .status(400)
+          .send({ ok: false, message: `Website URL does not exist` });
       });
   } catch (err) {
-    return res.status(400).send({ ok: false, message: `Invalid URL "${url}"` });
+    return res
+      .status(400)
+      .send({ ok: false, message: `Website URL does not exist` });
   }
 });

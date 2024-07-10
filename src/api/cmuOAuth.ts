@@ -113,7 +113,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
       },
       process.env.JWT_SECRET!,
       {
-        expiresIn: "1h", // Token will last for 1 hour only
+        expiresIn: "1d", // Token will last for 1 day only
       }
     );
 

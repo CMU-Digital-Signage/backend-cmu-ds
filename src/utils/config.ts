@@ -40,12 +40,19 @@ export const clearImageCache = () => {
   console.log("imageCache cleared at 4:00 am");
 };
 
-export const uploadFile = (file: any, path: string) => {
-  const base64Data = file.dataURL.replace(/^data:image\/\w+;base64,/, "");
+export const uploadFile = (
+  file: any,
+  path: string,
+  fileType: string = "image"
+) => {
+  const base64Data = file.dataURL.replace(
+    /^data:(image|video)\/\w+;base64,/,
+    ""
+  );
   const bufferData = Buffer.from(base64Data, "base64");
   const type = file.type.includes("/")
     ? file.type
-    : `image/${file.type.replace(".", "")}`;
+    : `${fileType}/${file.type.replace(".", "")}`;
   minioClient.putObject(
     bucketName,
     path,

@@ -69,7 +69,10 @@ poster.get("/", async (req: any, res: any) => {
             p.endTime.getTime() === e.endTime.getTime()
         );
         let image = imgCol.filter((i: any) => i.posterId === e.posterId);
-        if (!existingPoster && [Type.POSTER].includes(e.type.toUpperCase())) {
+        if (
+          !existingPoster &&
+          [Type.POSTER, Type.VIDEO].includes(e.type.toUpperCase())
+        ) {
           const promises = image.map(async (img: any) => {
             try {
               const url = await minioClient.presignedGetObject(
@@ -103,6 +106,7 @@ poster.post("/", async (req: any, res: any) => {
         },
       });
       if (posterName == null) {
+        const type = req.body.poster.type.toUpperCase();
         const user = await prisma.user.findUnique({
           where: { email: req.auth.email },
         });
@@ -110,13 +114,14 @@ poster.post("/", async (req: any, res: any) => {
           data: {
             title: req.body.poster.title,
             description: req.body.poster.description,
-            type: Type[req.body.poster.type.toUpperCase() as Type],
+            type: Type[type as Type],
             User: { connect: { id: user?.id } },
           },
         });
         const imageCol = req.body.poster.image;
         let image: Image[] = [];
-        if (req.body.poster.type.toUpperCase() == Type.WEBVIEW) {
+
+        if (type == Type.WEBVIEW) {
           image = [{ posterId: createPoster.posterId, ...imageCol[0] }];
         } else {
           const promises1 = imageCol.map(async (e: any) => {
@@ -125,7 +130,7 @@ poster.post("/", async (req: any, res: any) => {
               file = await convertUrlToFile(file);
             }
             const path = `${folderPoster}/${file.name}`;
-            uploadFile(file, path);
+            uploadFile(file, path, type == Type.VIDEO ? "video" : "image");
             image.push({
               posterId: createPoster.posterId,
               priority: e.priority,
@@ -216,7 +221,8 @@ poster.put("/", async (req: any, res: any) => {
 
     const imageCol = req.body.poster.image;
     if (oldName) {
-      if (oldName.type.toUpperCase() == Type.WEBVIEW) {
+      const type = oldName.type.toUpperCase();
+      if (type == Type.WEBVIEW) {
         await prisma.image.update({
           where: {
             posterId_priority: { posterId: req.query.posterId, priority: 1 },
@@ -242,7 +248,7 @@ poster.put("/", async (req: any, res: any) => {
             file = await convertUrlToFile(file);
           }
           const path = `${folderPoster}/${file.name}`;
-          uploadFile(file, path);
+          uploadFile(file, path, type == Type.VIDEO ? "video" : "image");
           image.push({
             posterId: req.query.posterId,
             priority: e.priority,
@@ -319,7 +325,11 @@ poster.delete("/", async (req: any, res: any) => {
         where: { posterId: req.query.posterId },
       });
 
-      if ([Type.POSTER as string].includes(deletePoster.type.toUpperCase())) {
+      if (
+        [Type.POSTER, Type.VIDEO as string].includes(
+          deletePoster.type.toUpperCase()
+        )
+      ) {
         const promises = image.map(async (e) => {
           try {
             delete imageCache[e.image];

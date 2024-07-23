@@ -137,8 +137,6 @@ device.put("/", async (req: any, res: any) => {
       }
     }
   } catch (err) {
-    console.log(err);
-
     return res
       .status(500)
       .send({ ok: false, message: "Internal Server Error" });
@@ -171,6 +169,38 @@ device.delete("/", async (req: any, res: any) => {
         }
       }
     }
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error" });
+  }
+});
+
+// PUT /device/bar : edit glance bar of device in database
+device.put("/bar", async (req: any, res: any) => {
+  try {
+    let device = await prisma.device.findUnique({
+      where: {
+        MACaddress: req.query.MACaddress,
+      },
+    });
+    if (!device) {
+      return res.status(404).send({ ok: false, message: "Device not found" });
+    }
+
+    device = await prisma.device.update({
+      where: {
+        MACaddress: req.query.MACaddress,
+      },
+      data: { ...req.body },
+    });
+
+    io.emit("updateDevice", device);
+    return res.send({
+      ok: true,
+      device,
+      message: "Edit Glance bar successfully.",
+    });
   } catch (err) {
     return res
       .status(500)

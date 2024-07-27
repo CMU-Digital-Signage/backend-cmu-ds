@@ -46,6 +46,33 @@ pi.post("/", async (req: any, res: any) => {
   }
 });
 
+pi.get("/bar", async (req: any, res: any) => {
+  try {
+    const device = await prisma.device.findUnique({
+      where: {
+        MACaddress: req.query.mac,
+      },
+      select: {
+        isSmall: true,
+        color1: true,
+        arrow1: true,
+        desc1: true,
+        color2: true,
+        arrow2: true,
+        desc2: true,
+      },
+    });
+    if (!device) {
+      return res.status(404).send({ ok: false, message: "Device not found" });
+    }
+    return res.send({ ok: true, device });
+  } catch (err) {
+    return res
+      .status(500)
+      .send({ ok: false, message: "Internal Server Error", err });
+  }
+});
+
 pi.get("/poster", async (req: any, res: any) => {
   try {
     const existDevice = await prisma.device.findUnique({
@@ -69,7 +96,8 @@ pi.get("/poster", async (req: any, res: any) => {
       `;
 
     let poster: any[] = [];
-    data.forEach(async (e: any) => {
+    
+    await Promise.all(data.map(async (e: any) => {
       const imgCol = data.filter((p: any) => p.title === e.title);
       let image: any[] = [];
       if (e.type.toUpperCase() == Type.WEBVIEW) {
@@ -77,7 +105,7 @@ pi.get("/poster", async (req: any, res: any) => {
       } else {
         const promises = imgCol.map(async (p: any) => {
           try {
-            if (!image.find((e) => e.priority === p.priority)) {
+            if (!image.find((i) => i.priority === p.priority)) {
               if (imageCache[p.image]) {
                 image.push({
                   image: imageCache[p.image],
@@ -93,7 +121,9 @@ pi.get("/poster", async (req: any, res: any) => {
                 image.push({ image: url, priority: p.priority });
               }
             }
-          } catch (err) {}
+          } catch (err) {
+            console.error(err);
+          }
         });
         await Promise.all(promises);
       }
@@ -114,18 +144,9 @@ pi.get("/poster", async (req: any, res: any) => {
           image: [...image],
         });
       }
-    });
+    }));
 
-    const room = await prisma.device
-      .findUnique({
-        select: { room: true },
-        where: { MACaddress: req.query.mac },
-      })
-      .then((e) => {
-        return e?.room;
-      });
-
-    return res.send({ ok: true, room, poster });
+    return res.send({ ok: true, poster });
   } catch (err) {
     return res
       .status(500)

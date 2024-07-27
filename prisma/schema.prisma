@@ -26,8 +26,11 @@ model Device {
   location    String?   @db.VarChar(255)
   description String?   @db.VarChar(255)
   status      Boolean   @default(false)
+  isSmall     Boolean?
+  color1      String?   @db.VarChar(100)
   arrow1      Int?
   desc1       String?   @db.VarChar(100)
+  color2      String?   @db.VarChar(100)
   arrow2      Int?
   desc2       String?   @db.VarChar(100)
   Display     Display[]

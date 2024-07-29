@@ -15,7 +15,7 @@ export const device = Router();
 // GET /device : return array of devices
 device.get("/", async (req: any, res: any) => {
   try {
-    let data: any = await prisma.device.findMany({
+    let data: any = await  prisma.device.findMany({
       orderBy: {
         deviceName: "asc",
       },

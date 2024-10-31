@@ -15,18 +15,22 @@ export const device = Router();
 // GET /device : return array of devices
 device.get("/", async (req: any, res: any) => {
   try {
-    let data: any = await  prisma.device.findMany({
+    let data: any = await prisma.device.findMany({
       orderBy: {
         deviceName: "asc",
       },
     });
     const promises = data.map(async (e: any) => {
       if (e.location) {
-        const url = await minioClient.presignedGetObject(
-          bucketName,
-          e.location
-        );
-        e.location = url;
+        try {
+          const url = await minioClient.presignedGetObject(
+            bucketName,
+            e.location
+          );
+          e.location = url;
+        } catch (err) {
+          console.log(err);
+        }
       }
     });
     await Promise.all(promises);

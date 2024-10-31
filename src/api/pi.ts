@@ -96,55 +96,57 @@ pi.get("/poster", async (req: any, res: any) => {
       `;
 
     let poster: any[] = [];
-    
-    await Promise.all(data.map(async (e: any) => {
-      const imgCol = data.filter((p: any) => p.title === e.title);
-      let image: any[] = [];
-      if (e.type.toUpperCase() == Type.WEBVIEW) {
-        image = imgCol;
-      } else {
-        const promises = imgCol.map(async (p: any) => {
-          try {
-            if (!image.find((i) => i.priority === p.priority)) {
-              if (imageCache[p.image]) {
-                image.push({
-                  image: imageCache[p.image],
-                  priority: p.priority,
-                });
-              } else {
-                const url = await minioClient.presignedGetObject(
-                  bucketName,
-                  p.image
-                );
-                imageCache[p.image] = url;
-                imageCache[url] = p.image;
-                image.push({ image: url, priority: p.priority });
-              }
-            }
-          } catch (err) {
-            console.error(err);
-          }
-        });
-        await Promise.all(promises);
-      }
 
-      if (
-        !poster.find(
-          (p: any) =>
-            p.title === e.title &&
-            p.startDate.getTime() === e.startDate.getTime() &&
-            p.endDate.getTime() === e.endDate.getTime() &&
-            p.startTime.getTime() === e.startTime.getTime() &&
-            p.endTime.getTime() === e.endTime.getTime()
-        )
-      ) {
-        const { priority, ...rest } = e;
-        poster.push({
-          ...rest,
-          image: [...image],
-        });
-      }
-    }));
+    await Promise.all(
+      data.map(async (e: any) => {
+        const imgCol = data.filter((p: any) => p.title === e.title);
+        let image: any[] = [];
+        if (e.type.toUpperCase() == Type.WEBVIEW) {
+          image = imgCol;
+        } else {
+          const promises = imgCol.map(async (p: any) => {
+            try {
+              if (!image.find((i) => i.priority === p.priority)) {
+                if (imageCache[p.image]) {
+                  image.push({
+                    image: imageCache[p.image],
+                    priority: p.priority,
+                  });
+                } else {
+                  const url = await minioClient.presignedGetObject(
+                    bucketName,
+                    p.image
+                  );
+                  imageCache[p.image] = url;
+                  imageCache[url] = p.image;
+                  image.push({ image: url, priority: p.priority });
+                }
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          });
+          await Promise.all(promises);
+        }
+
+        if (
+          !poster.find(
+            (p: any) =>
+              p.title === e.title &&
+              p.startDate.getTime() === e.startDate.getTime() &&
+              p.endDate.getTime() === e.endDate.getTime() &&
+              p.startTime.getTime() === e.startTime.getTime() &&
+              p.endTime.getTime() === e.endTime.getTime()
+          )
+        ) {
+          const { priority, ...rest } = e;
+          poster.push({
+            ...rest,
+            image: [...image],
+          });
+        }
+      })
+    );
 
     return res.send({ ok: true, poster });
   } catch (err) {
@@ -194,11 +196,15 @@ pi.get("/poster/emergency", async (req: any, res: any) => {
     });
     const promises = emergency.map(async (e) => {
       if (e.incidentName !== "banner") {
-        const url = await minioClient.presignedGetObject(
-          bucketName,
-          e.emergencyImage
-        );
-        e.emergencyImage = url;
+        try {
+          const url = await minioClient.presignedGetObject(
+            bucketName,
+            e.emergencyImage
+          );
+          e.emergencyImage = url;
+        } catch (err) {
+          console.log(err);
+        }
       }
     });
     await Promise.all(promises);

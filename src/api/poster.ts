@@ -80,7 +80,9 @@ poster.get("/", async (req: any, res: any) => {
                 img.image
               );
               img.image = url;
-            } catch (err) {}
+            } catch (err) {
+              console.log(err);
+            }
           });
           await Promise.all(promises);
         }

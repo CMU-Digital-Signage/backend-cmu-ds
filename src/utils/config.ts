@@ -24,7 +24,7 @@ export const minioClient = new Minio.Client({
   useSSL: true,
 });
 
-export const bucketName = "pixel-parade";
+export const bucketName = "cpe-pixel-parade";
 export const folderDevice = "devices";
 export const folderPoster = "posters";
 export const folderEmer = "emergencies";
@@ -58,9 +58,7 @@ export const uploadFile = (
     path,
     bufferData,
     file.size,
-    {
-      "Content-Type": type,
-    },
+    { "Content-Type": type },
     function (err: any, objInfo: any) {
       if (err) {
         return console.log(err);

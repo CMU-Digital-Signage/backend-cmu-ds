@@ -8,7 +8,7 @@ export const cmuOAuth = Router();
 
 const getCMUBasicInfoAsync = async (accessToken: string) => {
   try {
-    const response = await axios.get(process.env.CMU_OAUTH_GET_BASIC_INFO!, {
+    const response = await axios.get(process.env.CMU_ENTRAID_GET_BASIC_INFO!, {
       headers: { Authorization: "Bearer " + accessToken },
     });
     return response.data;
@@ -29,14 +29,14 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     let response;
     try {
       response = await axios.post(
-        process.env.CMU_OAUTH_GET_TOKEN_URL!,
+        process.env.CMU_ENTRAID_REDIRECT_URL!,
         {},
         {
           params: {
             code: req.query.code,
-            redirect_uri: process.env.CMU_OAUTH_REDIRECT_URL,
-            client_id: process.env.CMU_OAUTH_CLIENT_ID,
-            client_secret: process.env.CMU_OAUTH_CLIENT_SECRET,
+            redirect_uri: process.env.CMU_ENTRAID_REDIRECT_URL,
+            client_id: process.env.CMU_ENTRAID_CLIENT_ID,
+            client_secret: process.env.CMU_ENTRAID_CLIENT_SECRET,
             grant_type: "authorization_code",
           },
           headers: {
@@ -47,7 +47,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     } catch (err) {
       return res
         .status(400)
-        .send({ ok: false, message: "Cannot get OAuth access token" });
+        .send({ ok: false, message: "Cannot get EntraID access token" });
     }
     //get basic info
     let response2;

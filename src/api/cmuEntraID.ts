@@ -4,7 +4,7 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../utils/db.server";
 import { io } from "../app";
 
-export const cmuOAuth = Router();
+export const cmuEntraID = Router();
 
 const getCMUBasicInfoAsync = async (accessToken: string) => {
   try {
@@ -17,7 +17,7 @@ const getCMUBasicInfoAsync = async (accessToken: string) => {
   }
 };
 
-cmuOAuth.post("/", async (req: Request, res: Response) => {
+cmuEntraID.post("/", async (req: Request, res: Response) => {
   try {
     //validate code
     if (typeof req.query.code !== "string") {
@@ -29,16 +29,16 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
     let response;
     try {
       response = await axios.post(
-        process.env.CMU_ENTRAID_REDIRECT_URL!,
-        {},
+        process.env.CMU_ENTRAID_GET_TOKEN_URL!,
         {
-          params: {
-            code: req.query.code,
-            redirect_uri: process.env.CMU_ENTRAID_REDIRECT_URL,
-            client_id: process.env.CMU_ENTRAID_CLIENT_ID,
-            client_secret: process.env.CMU_ENTRAID_CLIENT_SECRET,
-            grant_type: "authorization_code",
-          },
+          code: req.query.code,
+          redirect_uri: process.env.CMU_ENTRAID_REDIRECT_URL,
+          client_id: process.env.CMU_ENTRAID_CLIENT_ID,
+          client_secret: process.env.CMU_ENTRAID_CLIENT_SECRET,
+          scope: process.env.SCOPE,
+          grant_type: "authorization_code",
+        },
+        {
           headers: {
             "content-type": "application/x-www-form-urlencoded",
           },
@@ -119,6 +119,7 @@ cmuOAuth.post("/", async (req: Request, res: Response) => {
 
     return res.send({ user, token });
   } catch (err: any) {
+    console.log(err);
     if (!err.response) {
       return res.status(500).send({
         ok: false,

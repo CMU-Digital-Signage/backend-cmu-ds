@@ -1,6 +1,6 @@
 import express from "express";
 import { admin } from "./admin";
-import { cmuOAuth } from "./cmuOAuth";
+import { cmuEntraID } from "./cmuEntraID";
 import { device } from "./device";
 import { poster } from "./poster";
 import { user } from "./user";
@@ -15,14 +15,14 @@ const pathToRegexp = require("path-to-regexp");
 const unprotected = [
   pathToRegexp("/api/v1/pi*"),
   pathToRegexp("/api/v1/proxy*"),
-  pathToRegexp("/api/v1/cmuOAuth"),
+  pathToRegexp("/api/v1/login"),
   pathToRegexp("/api/v1/poster/emergency*"),
 ];
 
 routes.use(jwtMiddleware.unless({ path: unprotected }));
 
 routes.use("/proxy", proxy);
-routes.use("/cmuOAuth", cmuOAuth);
+routes.use("/login", cmuEntraID);
 routes.use("/pi", pi);
 routes.use("/user", user);
 routes.use("/admin", admin);
